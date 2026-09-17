@@ -1,0 +1,12 @@
+{
+  "llm_provider": "openai",
+  "llm_model": "",
+  "timezone": "America/Los_Angeles",
+  "posts_per_day": 1,
+  "post_times": [
+    "09:00"
+  ],
+  "mode": "auto",
+  "preview_minutes": 30,
+  "preview_timeout_action": "post"
+}
