@@ -21,6 +21,10 @@ def test_bad_time_format(bad):
 def test_bad_timezone():
     with pytest.raises(ConfigError, match="timezone"):
         Config(timezone="Mars/Olympus").validate()
+        
+def test_bad_tone():
+    with pytest.raises(ConfigError,match="tone"):
+        Config(tone="angry").validate()
 
 
 def test_round_trip_sorts_times(tmp_path):

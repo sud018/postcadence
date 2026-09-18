@@ -11,6 +11,7 @@ from agent.jsonio import read_json, write_json
 
 PROVIDERS = ("openai", "anthropic", "gemini", "ollama")
 MODES = ("auto", "preview")
+TONES = ("professional", "causual", "storytelling")
 TIMEOUT_ACTIONS = ("post", "skip")
 MAX_POSTS_PER_DAY = 5
 _TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
@@ -28,6 +29,7 @@ class Config:
     posts_per_day: int = 1
     post_times: list[str] = field(default_factory=lambda: ["09:00"])
     mode: str = "auto"
+    tone: str = "professional"
     preview_minutes: int = 30
     preview_timeout_action: str = "post"
 
@@ -59,7 +61,8 @@ class Config:
             errors.append("preview_minutes must be 5-240")
         if self.preview_timeout_action not in TIMEOUT_ACTIONS:
             errors.append(f"preview_timeout_action must be one of {TIMEOUT_ACTIONS}")
-
+        if self.tone not in TONES:
+            errors.append(f"tone must be one of {TONES}")
         if errors:
             raise ConfigError("Invalid config:\n  - " + "\n  - ".join(errors))
 

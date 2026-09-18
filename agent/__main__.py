@@ -12,6 +12,8 @@ from agent import paths
 from agent.config import Config, ConfigError, load_config, save_config
 from agent.secrets_store import KNOWN_SECRETS, delete_secret, get_secret, mask, set_secret
 from agent.state import load_state, save_state
+from agent.llm import get_provider
+from agent.llm.base import LLMError
 
 console = Console()
 
@@ -62,6 +64,13 @@ def cmd_secret_delete(args: argparse.Namespace) -> int:
         console.print(f"[yellow]{args.name} was not set[/]")
     return 0
 
+def cmd_check_llm(args: argparse.Namespace) -> int:
+    cfg = load_config()
+    provider = get_provider(cfg)
+    console.print(f"Provider: [cyan]{provider.name}[/] · model: [cyan]{provider.model}[/]")
+    console.print(f"Model replied: [green]{provider.check()}[/]")
+    return 0
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m agent", description="PostCadence agent")
@@ -72,7 +81,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_init)
 
     sub.add_parser("show", help="show config, state and masked secrets").set_defaults(func=cmd_show)
-
+    sub.add_parser("check-llm", help="verify the API key works").set_defaults(func=cmd_check_llm)
     secret = sub.add_parser("secret", help="manage secrets").add_subparsers(dest="action", required=True)
     s = secret.add_parser("set")
     s.add_argument("name", choices=sorted(KNOWN_SECRETS))
@@ -87,7 +96,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         return args.func(args)
-    except (ConfigError, FileNotFoundError, KeyError, ValueError) as exc:
+    except (ConfigError, FileNotFoundError, KeyError, ValueError, LLMError) as exc:
         console.print(f"[red]Error:[/] {exc}")
         return 1
 
