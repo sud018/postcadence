@@ -14,6 +14,9 @@ from agent.secrets_store import KNOWN_SECRETS, delete_secret, get_secret, mask, 
 from agent.state import load_state, save_state
 from agent.llm import get_provider
 from agent.llm.base import LLMError
+from agent.linkedin.errors import LinkedInError
+from agent.linkedin.oauth import connect
+from agent.linkedin.poster import post_text
 
 console = Console()
 
@@ -71,6 +74,41 @@ def cmd_check_llm(args: argparse.Namespace) -> int:
     console.print(f"Model replied: [green]{provider.check()}[/]")
     return 0
 
+def cmd_linkedin_connect(args: argparse.Namespace) -> int:
+    client_id = get_secret("LINKEDIN_CLIENT_ID")
+    client_secret = get_secret("LINKEDIN_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        console.print("[red]Store your app credentials first:[/] python -m agent secret set LINKEDIN_CLIENT_ID")
+        return 1
+    
+    result = connect(client_id, client_secret)
+    set_secret("LINKEDIN_ACCESS_TOKEN", result["access_token"])
+
+    cfg = load_config()
+    cfg.linkedin_member_id = result["member_id"]
+    cfg.linkedin_token_expires = result["expires_on"]
+    save_config(cfg)
+
+    console.print(f"[green]Connected.[/] Member id: {result['member_id']}")
+    console.print(f"Token valid until [cyan]{result['expires_on']}[/]")
+    return 0
+
+def cmd_linkedin_test_post(args: argparse.Namespace) -> int:
+    cfg = load_config()
+    token = get_secret("LINKEDIN_ACCESS_TOKEN")
+    if not token or not cfg.linkedin_member_id:
+        console.print("[red]Not connected.[/] Run: python -m agent linkedin connect")
+        return 1
+
+    text = args.text or "Testing my posting agent. This post was published from Python."
+    console.print(f"About to post:\n\n{text}\n")
+    if input("Publish this to your LinkedIn profile? [y/N] ").strip().lower() != "y":
+        console.print("Cancelled.")
+        return 0
+
+    urn = post_text(text, token, cfg.linkedin_member_id)
+    console.print(f"[green]Posted.[/] {urn}")
+    return 0
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m agent", description="PostCadence agent")
@@ -83,6 +121,12 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("show", help="show config, state and masked secrets").set_defaults(func=cmd_show)
     sub.add_parser("check-llm", help="verify the API key works").set_defaults(func=cmd_check_llm)
     secret = sub.add_parser("secret", help="manage secrets").add_subparsers(dest="action", required=True)
+    linkedin = sub.add_parser("linkedin", help="LinkedIn connection").add_subparsers(
+        dest="action", required=True)
+    linkedin.add_parser("connect").set_defaults(func=cmd_linkedin_connect)
+    tp = linkedin.add_parser("test-post")
+    tp.add_argument("--text", default="")
+    tp.set_defaults(func=cmd_linkedin_test_post)
     s = secret.add_parser("set")
     s.add_argument("name", choices=sorted(KNOWN_SECRETS))
     s.set_defaults(func=cmd_secret_set)
@@ -96,7 +140,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         return args.func(args)
-    except (ConfigError, FileNotFoundError, KeyError, ValueError, LLMError) as exc:
+    except (ConfigError, FileNotFoundError, KeyError, ValueError, LLMError, LinkedInError) as exc:
         console.print(f"[red]Error:[/] {exc}")
         return 1
 

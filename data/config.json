@@ -9,5 +9,7 @@
   "mode": "auto",
   "tone": "professional",
   "preview_minutes": 30,
-  "preview_timeout_action": "post"
+  "preview_timeout_action": "post",
+  "linkedin_member_id": "gO0v4mD6yc",
+  "linkedin_token_expires": "2026-11-16"
 }

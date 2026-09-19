@@ -32,6 +32,8 @@ class Config:
     tone: str = "professional"
     preview_minutes: int = 30
     preview_timeout_action: str = "post"
+    linkedin_member_id: str = ""
+    linkedin_token_expires: str = "" 
 
     def validate(self) -> None:
         errors: list[str] = []
