@@ -1,0 +1,24 @@
+{
+  "topics": [
+    "Why RAG systems fail in production and how to fix them",
+    "Chunking strategies that actually improve retrieval quality",
+    "Hybrid search: combining BM25 with vector similarity",
+    "Choosing a vector database: pgvector vs Pinecone vs Qdrant",
+    "Reranking: the cheapest way to improve RAG accuracy",
+    "How to evaluate a RAG pipeline without a labelled dataset",
+    "Context windows got bigger - is RAG still necessary?",
+    "Agentic RAG: when retrieval should be a tool call",
+    "GraphRAG and when knowledge graphs beat plain embeddings",
+    "Prompt caching: cutting LLM costs without changing your model",
+    "Structured outputs and why JSON mode changed my pipelines",
+    "Function calling vs MCP: how agents connect to real systems",
+    "Memory in agents: short-term, long-term, and what to forget",
+    "Multi-agent systems: when they help and when they just add latency",
+    "Small language models on-device: what they are good enough for",
+    "Fine-tuning vs RAG vs prompting: picking the right lever",
+    "LLM evaluation: building an eval set before you build the product",
+    "Guardrails and prompt injection: lessons from shipping to users",
+    "Measuring the real cost per request of an LLM feature",
+    "What I learned building my first AI agent end to end"
+  ]
+}

@@ -17,6 +17,7 @@ from agent.llm.base import LLMError
 from agent.linkedin.errors import LinkedInError
 from agent.linkedin.oauth import connect
 from agent.linkedin.poster import post_text
+from agent.topics import TopicError, load_file, load_topics, load_typed,pick_topic,save_topics
 
 console = Console()
 
@@ -110,6 +111,46 @@ def cmd_linkedin_test_post(args: argparse.Namespace) -> int:
     console.print(f"[green]Posted.[/] {urn}")
     return 0
 
+def cmd_topics_add(args: argparse.Namespace) -> int:
+    new = load_file(args.file) if args.file else load_typed(args.text)
+    existing = load_topics()
+    merged = existing + [t for t in new if t.lower() not in {e.lower() for e in existing}]
+    save_topics(merged)
+    console.print(f"[green]Added {len(merged) - len(existing)}[/] new topics. Total: {len(merged)}")
+    return 0
+
+def cmd_topics_list(args: argparse.Namespace)->int:
+    topics = load_topics()
+    if not topics:
+        console.print("[yellow]No topics yet.[/] Add some with: python -m agent topics add --text \"...\"")
+        return 0
+    used = load_state().next_topic_index
+    table = Table(title=f"Topics ({len(topics)})")
+    table.add_column("#", justify="right")
+    table.add_column("Topic")
+    table.add_column("Status")
+    for i,topic in enumerate(topics):
+        table.add_row(str(i), topic, "used" if i<used else "queued")
+    console.print(table)
+    return 0
+
+def cmd_topics_next(args: argparse.Namespace)->int:
+    from datetime import date
+    cfg = load_config()
+    slot = args.slot or cfg.post_times[0]
+    pick = pick_topic(load_topics(), load_state(),slot, date.today().isoformat())
+    label = "[yellow]repeat[/]" if pick.is_repeat else "[green]new[/]"
+    console.print(f"Slot {slot}: {pick.topic}  ({label})")
+    return 0
+
+def cmd_topics_clear(args: argparse.Namespace) -> int:
+    save_topics([])
+    state = load_state()
+    state.next_topic_index = 0
+    save_state(state)
+    console.print("[green]Topics cleared.[/]")
+    return 0
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m agent", description="PostCadence agent")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -123,6 +164,16 @@ def build_parser() -> argparse.ArgumentParser:
     secret = sub.add_parser("secret", help="manage secrets").add_subparsers(dest="action", required=True)
     linkedin = sub.add_parser("linkedin", help="LinkedIn connection").add_subparsers(
         dest="action", required=True)
+    topics = sub.add_parser("topics", help="manage your topic list").add_subparsers(dest="action", required=True)
+    add = topics.add_parser("add")
+    add.add_argument("--file", default="")
+    add.add_argument("--text", default="")
+    add.set_defaults(func=cmd_topics_add)
+    topics.add_parser("list").set_defaults(func=cmd_topics_list)
+    nxt = topics.add_parser("next")
+    nxt.add_argument("--slot", default="")
+    nxt.set_defaults(func=cmd_topics_next)
+    topics.add_parser("clear").set_defaults(func=cmd_topics_clear)
     linkedin.add_parser("connect").set_defaults(func=cmd_linkedin_connect)
     tp = linkedin.add_parser("test-post")
     tp.add_argument("--text", default="")
