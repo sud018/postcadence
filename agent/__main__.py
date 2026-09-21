@@ -18,6 +18,7 @@ from agent.linkedin.errors import LinkedInError
 from agent.linkedin.oauth import connect
 from agent.linkedin.poster import post_text
 from agent.topics import TopicError, load_file, load_topics, load_typed,pick_topic,save_topics
+from agent.run import run_once
 
 console = Console()
 
@@ -151,6 +152,25 @@ def cmd_topics_clear(args: argparse.Namespace) -> int:
     console.print("[green]Topics cleared.[/]")
     return 0
 
+def cmd_run(args: argparse.Namespace) -> int:
+    cfg = load_config()
+    slot = args.slot or cfg.post_times[0]
+    result = run_once(cfg, slot, dry_run=args.dry_run, force=args.force)
+
+    if result.status == "skipped":
+        console.print(f"[yellow]Skipped:[/] {result.reason}")
+        return 0
+
+    console.print(f"[cyan]Topic:[/] {result.topic}\n")
+    console.print(result.text)
+    console.print(f"\n[dim]{len(result.text)} characters[/]")
+
+    if result.status == "dry-run":
+        console.print("\n[yellow]Dry run - nothing was published.[/]")
+    else:
+        console.print(f"\n[green]Posted.[/] {result.post_id}")
+    return 0
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m agent", description="PostCadence agent")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -175,6 +195,11 @@ def build_parser() -> argparse.ArgumentParser:
     nxt.set_defaults(func=cmd_topics_next)
     topics.add_parser("clear").set_defaults(func=cmd_topics_clear)
     linkedin.add_parser("connect").set_defaults(func=cmd_linkedin_connect)
+    run_cmd = sub.add_parser("run", help="write and publish one post")
+    run_cmd.add_argument("--slot", default="")
+    run_cmd.add_argument("--dry-run", action="store_true")
+    run_cmd.add_argument("--force", action="store_true")
+    run_cmd.set_defaults(func=cmd_run)
     tp = linkedin.add_parser("test-post")
     tp.add_argument("--text", default="")
     tp.set_defaults(func=cmd_linkedin_test_post)
