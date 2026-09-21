@@ -1,11 +1,9 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-import pytest
-
 from agent.config import Config
-from agent.state import HistoryEntry, State
 from agent.schedule import cron_lines, due_slots, slot_time
+from agent.state import HistoryEntry, State
 
 TZ = ZoneInfo("America/Los_Angeles")
 

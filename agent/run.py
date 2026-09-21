@@ -5,15 +5,15 @@ from dataclasses import dataclass
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from agent import preview
 from agent.config import Config
 from agent.formatter import format_post
+from agent.linkedin.errors import LinkedInAuthError, LinkedInError
 from agent.linkedin.poster import post_text
 from agent.secrets_store import get_secret
 from agent.state import HistoryEntry, load_state, save_state
 from agent.topics import advance, load_topics, pick_topic
 from agent.writer import write_post
-from agent.linkedin.errors import LinkedInAuthError, LinkedInError
-from agent import preview
 
 RECENT_COUNT = 3
 
@@ -130,4 +130,3 @@ def decide_preview(cfg: Config, slot: str) -> RunResult:
     preview.close_draft(draft.number, f"Published: {post_id}")
 
     return RunResult(status="posted", topic=pick.topic, text=draft.text, post_id=post_id)
- 

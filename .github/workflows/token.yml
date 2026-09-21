@@ -1,0 +1,42 @@
+name: LinkedIn token check
+
+on:
+  schedule:
+    - cron: "0 16 * * 1"       # Mondays
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Check how long the token has left
+        id: token
+        run: python -m agent token-check --days 14
+
+      - name: Open a reminder issue
+        if: steps.token.outputs.expiring == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          open=$(gh issue list --state open --search "LinkedIn token expires in:title" --json number --jq 'length')
+          if [ "$open" = "0" ]; then
+            gh issue create \
+              --title "LinkedIn token expires in ${{ steps.token.outputs.days_left }} days" \
+              --body "Run \`python -m agent linkedin connect\` on your machine, then \`python -m agent secret push\`, then commit the updated data/config.json." \
+              --label maintenance
+          else
+            echo "A reminder issue is already open."
+          fi

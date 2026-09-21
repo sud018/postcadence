@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from agent.config import Config
 from agent.state import State
 
+
 def local_now(cfg: Config) -> datetime:
     """The current time where the user lives, not where the server lives."""
     return datetime.now(ZoneInfo(cfg.timezone))

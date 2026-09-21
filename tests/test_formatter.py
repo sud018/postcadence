@@ -1,7 +1,14 @@
-import pytest
 
-from agent.formatter import (MAX_LENGTH, fit_length, format_post, hashtags_for,
-                             normalise_bullets, strip_markdown, tidy_spacing, unwrap_quotes)
+from agent.formatter import (
+    MAX_LENGTH,
+    fit_length,
+    format_post,
+    hashtags_for,
+    normalise_bullets,
+    strip_markdown,
+    tidy_spacing,
+    unwrap_quotes,
+)
 
 
 def test_strips_markdown():

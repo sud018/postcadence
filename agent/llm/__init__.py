@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from agent.config import Config
 from agent.llm.base import AuthError, LLMError, LLMProvider
-
 from agent.secrets_store import get_secret
 
 KEY_NAMES = {

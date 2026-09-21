@@ -14,10 +14,10 @@ STATUSES = ("posted", "failed", "skipped", "pending_preview")
 @dataclass
 class HistoryEntry:
     date: str
-    slot: str          
+    slot: str
     topic: str
     status: str
-    post_id: str = ""  
+    post_id: str = ""
     error: str = ""
     created_at: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds")

@@ -1,17 +1,18 @@
 """Turn raw model output into a post that looks right on LinkedIn."""
 from __future__ import annotations
+
 import re
 
 MAX_LENGTH = 3000
 MAX_HASHTAGS = 3
 
-FENCE = re.compile(r"^```.*$", re.MULTILINE)          
-HEADING = re.compile(r"^#{1,6}\s*", re.MULTILINE)    
-BOLD_ITALIC = re.compile(r"(\*{1,3}|_{2,3})(.+?)\1")  
+FENCE = re.compile(r"^```.*$", re.MULTILINE)
+HEADING = re.compile(r"^#{1,6}\s*", re.MULTILINE)
+BOLD_ITALIC = re.compile(r"(\*{1,3}|_{2,3})(.+?)\1")
 QUOTE = re.compile(r"^>\s?", re.MULTILINE)
 RULE = re.compile(r"^\s*([-*_])\1{2,}\s*$", re.MULTILINE)
 BULLET = re.compile(r"^\s*[-*•]\s+", re.MULTILINE)
-BLANKS = re.compile(r"\n{3,}")           
+BLANKS = re.compile(r"\n{3,}")
 TRAILING = re.compile(r"[ \t]+$", re.MULTILINE)
 HASHTAG = re.compile(r"#\w+")
 WRAPPED = re.compile(r'^["\'](.+)["\']$', re.DOTALL)

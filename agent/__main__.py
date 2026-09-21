@@ -2,7 +2,11 @@
 from __future__ import annotations
 
 import argparse
+import os
+import shutil
+import subprocess
 import sys
+from datetime import date
 from getpass import getpass
 
 from rich.console import Console
@@ -10,20 +14,16 @@ from rich.table import Table
 
 from agent import paths
 from agent.config import Config, ConfigError, load_config, save_config
-from agent.secrets_store import KNOWN_SECRETS, delete_secret, get_secret, mask, set_secret
-from agent.state import load_state, save_state
-from agent.llm import get_provider
-from agent.llm.base import LLMError
 from agent.linkedin.errors import LinkedInError
 from agent.linkedin.oauth import connect
 from agent.linkedin.poster import post_text
-from agent.topics import TopicError, load_file, load_topics, load_typed,pick_topic,save_topics
-from agent.run import run_once
-import subprocess
-import shutil
-from agent.schedule import cron_lines, due_slots
+from agent.llm import get_provider
+from agent.llm.base import LLMError
 from agent.run import decide_preview, prepare_preview, run_once
 from agent.schedule import cron_lines, due_slots, prepare_slots
+from agent.secrets_store import KNOWN_SECRETS, delete_secret, get_secret, mask, set_secret
+from agent.state import load_state, save_state
+from agent.topics import load_file, load_topics, load_typed, pick_topic, save_topics
 
 console = Console()
 
@@ -87,7 +87,7 @@ def cmd_linkedin_connect(args: argparse.Namespace) -> int:
     if not client_id or not client_secret:
         console.print("[red]Store your app credentials first:[/] python -m agent secret set LINKEDIN_CLIENT_ID")
         return 1
-    
+
     result = connect(client_id, client_secret)
     set_secret("LINKEDIN_ACCESS_TOKEN", result["access_token"])
 
@@ -221,6 +221,26 @@ def cmd_cron(args: argparse.Namespace) -> int:
         console.print(f'    - cron: "{line}"')
     return 0
 
+def cmd_token_check(args: argparse.Namespace) -> int:
+    """Report how many days the LinkedIn token has left, for CI to act on."""
+    cfg = load_config()
+    if not cfg.linkedin_token_expires:
+        console.print("[yellow]No expiry recorded.[/] Run: python -m agent linkedin connect")
+        return 0
+
+    days_left = (date.fromisoformat(cfg.linkedin_token_expires) - date.today()).days
+    expiring = days_left <= args.days
+
+    colour = "red" if expiring else "green"
+    console.print(f"LinkedIn token expires {cfg.linkedin_token_expires} - [{colour}]{days_left} days left[/]")
+
+    output = os.environ.get("GITHUB_OUTPUT")
+    if output:
+        with open(output, "a", encoding="utf-8") as handle:
+            handle.write(f"days_left={days_left}\n")
+            handle.write(f"expiring={'true' if expiring else 'false'}\n")
+    return 0
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m agent", description="PostCadence agent")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -255,6 +275,9 @@ def build_parser() -> argparse.ArgumentParser:
     due.add_argument("--dry-run", action="store_true")
     due.set_defaults(func=cmd_run_due)
     sub.add_parser("cron", help="print the cron lines for your schedule").set_defaults(func=cmd_cron)
+    token = sub.add_parser("token-check", help="days left on the LinkedIn token")
+    token.add_argument("--days", type=int, default=14)
+    token.set_defaults(func=cmd_token_check)
     tp = linkedin.add_parser("test-post")
     tp.add_argument("--text", default="")
     tp.set_defaults(func=cmd_linkedin_test_post)
@@ -278,4 +301,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-    
