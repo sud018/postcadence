@@ -1,6 +1,9 @@
 name: Post to LinkedIn
 
 on:
+  schedule:
+    - cron: "0 16 * * *"
+    - cron: "0 17 * * *"
   workflow_dispatch:
     inputs:
       slot:
@@ -11,6 +14,10 @@ on:
         description: "Generate the post but do not publish"
         type: boolean
         default: true
+      force:
+        description: "Post even if this slot was already handled"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -20,10 +27,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
@@ -31,17 +38,26 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run the agent
+      - name: Run due slots (scheduled)
+        if: github.event_name == 'schedule'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+        run: python -m agent run-due
+
+      - name: Run one slot (manual)
+        if: github.event_name == 'workflow_dispatch'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
         run: |
           python -m agent run \
             --slot "${{ inputs.slot }}" \
-            ${{ inputs.dry_run && '--dry-run' || '' }}
+            ${{ inputs.dry_run && '--dry-run' || '' }} \
+            ${{ inputs.force && '--force' || '' }}
 
       - name: Save state back to the repo
-        if: ${{ !inputs.dry_run }}
+        if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
         run: |
           git config user.name "postcadence-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

@@ -13,11 +13,11 @@ STATUSES = ("posted", "failed", "skipped", "pending_preview")
 
 @dataclass
 class HistoryEntry:
-    date: str          # local date, "YYYY-MM-DD"
-    slot: str          # scheduled time, "HH:MM"
+    date: str
+    slot: str          
     topic: str
     status: str
-    post_id: str = ""  # LinkedIn post URN once published
+    post_id: str = ""  
     error: str = ""
     created_at: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds")

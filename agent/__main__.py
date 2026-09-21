@@ -21,6 +21,7 @@ from agent.topics import TopicError, load_file, load_topics, load_typed,pick_top
 from agent.run import run_once
 import subprocess
 import shutil
+from agent.schedule import cron_lines, due_slots
 
 console = Console()
 
@@ -188,6 +189,31 @@ def cmd_secret_push(args: argparse.Namespace) -> int:
         console.print(f"[green]Pushed[/] {name} to GitHub")
     return 0
 
+def cmd_run_due(args: argparse.Namespace) -> int:
+    cfg = load_config()
+    slots = due_slots(cfg, load_state())
+    if not slots:
+        console.print("[dim]Nothing due right now.[/]")
+        return 0
+
+    for slot in slots:
+        console.print(f"\n[cyan]=== {slot} ===[/]")
+        result = run_once(cfg, slot, dry_run=args.dry_run)
+        console.print(f"[cyan]Topic:[/] {result.topic}\n")
+        console.print(result.text)
+        if result.status == "posted":
+            console.print(f"\n[green]Posted.[/] {result.post_id}")
+        elif result.status == "dry-run":
+            console.print("\n[yellow]Dry run - nothing was published.[/]")
+    return 0
+
+def cmd_cron(args: argparse.Namespace) -> int:
+    cfg = load_config()
+    console.print(f"For {cfg.post_times} in {cfg.timezone}, put these in post.yml:\n")
+    for line in cron_lines(cfg):
+        console.print(f'    - cron: "{line}"')
+    return 0
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m agent", description="PostCadence agent")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -218,6 +244,10 @@ def build_parser() -> argparse.ArgumentParser:
     run_cmd.add_argument("--force", action="store_true")
     run_cmd.set_defaults(func=cmd_run)
     secret.add_parser("push").set_defaults(func=cmd_secret_push)
+    due = sub.add_parser("run-due", help="post any slot that is due now")
+    due.add_argument("--dry-run", action="store_true")
+    due.set_defaults(func=cmd_run_due)
+    sub.add_parser("cron", help="print the cron lines for your schedule").set_defaults(func=cmd_cron)
     tp = linkedin.add_parser("test-post")
     tp.add_argument("--text", default="")
     tp.set_defaults(func=cmd_linkedin_test_post)

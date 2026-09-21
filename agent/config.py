@@ -33,7 +33,8 @@ class Config:
     preview_minutes: int = 30
     preview_timeout_action: str = "post"
     linkedin_member_id: str = ""
-    linkedin_token_expires: str = "" 
+    linkedin_token_expires: str = ""
+    catch_up_hours: int = 6
 
     def validate(self) -> None:
         errors: list[str] = []
@@ -67,6 +68,8 @@ class Config:
             errors.append(f"tone must be one of {TONES}")
         if errors:
             raise ConfigError("Invalid config:\n  - " + "\n  - ".join(errors))
+        if not 1 <= self.catch_up_hours <= 24:
+            errors.append("catch_up_hours must be 1-24")
 
     def to_dict(self) -> dict:
         return asdict(self)
