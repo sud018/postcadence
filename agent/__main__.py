@@ -19,10 +19,12 @@ from agent.linkedin.oauth import connect
 from agent.linkedin.poster import post_text
 from agent.topics import TopicError, load_file, load_topics, load_typed,pick_topic,save_topics
 from agent.run import run_once
+import subprocess
+import shutil
 
 console = Console()
 
-
+PUSHABLE = ("OPENAI_API_KEY", "LINKEDIN_ACCESS_TOKEN")
 def cmd_init(args: argparse.Namespace) -> int:
     if paths.CONFIG_FILE.exists() and not args.force:
         console.print("[yellow]Config already exists.[/] Use --force to overwrite.")
@@ -171,6 +173,21 @@ def cmd_run(args: argparse.Namespace) -> int:
         console.print(f"\n[green]Posted.[/] {result.post_id}")
     return 0
 
+def cmd_secret_push(args: argparse.Namespace) -> int:
+    gh = shutil.which("gh")
+    if not gh:
+        console.print("[red]gh not found on PATH.[/] Open a new terminal, or install: winget install GitHub.cli")
+        return 1
+
+    for name in PUSHABLE:
+        value = get_secret(name)
+        if not value:
+            console.print(f"[yellow]Skipping {name}[/] - not set locally")
+            continue
+        subprocess.run([gh, "secret", "set", name], input=value, text=True, check=True)
+        console.print(f"[green]Pushed[/] {name} to GitHub")
+    return 0
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m agent", description="PostCadence agent")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -200,6 +217,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_cmd.add_argument("--dry-run", action="store_true")
     run_cmd.add_argument("--force", action="store_true")
     run_cmd.set_defaults(func=cmd_run)
+    secret.add_parser("push").set_defaults(func=cmd_secret_push)
     tp = linkedin.add_parser("test-post")
     tp.add_argument("--text", default="")
     tp.set_defaults(func=cmd_linkedin_test_post)
