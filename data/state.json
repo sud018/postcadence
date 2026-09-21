@@ -1,5 +1,5 @@
 {
-  "next_topic_index": 1,
+  "next_topic_index": 2,
   "history": [
     {
       "date": "2026-09-20",
@@ -9,6 +9,15 @@
       "post_id": "urn:li:share:7507679948028063744",
       "error": "",
       "created_at": "2026-09-21T05:59:46+00:00"
+    },
+    {
+      "date": "2026-09-20",
+      "slot": "17:30",
+      "topic": "Chunking strategies that actually improve retrieval quality",
+      "status": "posted",
+      "post_id": "urn:li:share:7507693942595854336",
+      "error": "",
+      "created_at": "2026-09-21T06:55:22+00:00"
     }
   ]
 }
