@@ -35,6 +35,26 @@ def due_slots(cfg: Config, state: State, now: datetime | None = None) -> list[st
         due.append(slot)
     return due
 
+def prepare_slots(cfg: Config, state: State, now: datetime | None = None) -> list[str]:
+    """Slots whose preview should be written now: inside the preview window
+    before the slot, and not already posted or skipped."""
+    if cfg.mode != "preview":
+        return []
+
+    now = now or local_now(cfg)
+    today = now.date().isoformat()
+    lead = timedelta(minutes=cfg.preview_minutes)
+
+    ready = []
+    for slot in cfg.post_times:
+        scheduled = slot_time(now, slot)
+        if not (scheduled - lead <= now < scheduled):
+            continue                      # not inside the preview window
+        if state.already_handled(today, slot):
+            continue
+        ready.append(slot)
+    return ready
+
 def cron_lines(cfg: Config, year: int | None = None) -> list[str]:
     """UTC cron lines covering each slot in both winter and summer offsets.
 
@@ -49,7 +69,12 @@ def cron_lines(cfg: Config, year: int | None = None) -> list[str]:
         hour, minute = (int(part) for part in slot.split(":"))
         for month, day in ((1, 15), (7, 15)):          # a winter and a summer date
             local = datetime(year, month, day, hour, minute, tzinfo=tz)
-            utc = local.astimezone(ZoneInfo("UTC"))
-            times.add((utc.hour, utc.minute))
+            times.add(_utc_hm(local))
+            if cfg.mode == "preview":
+                times.add(_utc_hm(local - timedelta(minutes=cfg.preview_minutes)))
 
     return [f"{minute} {hour} * * *" for hour, minute in sorted(times)]
+
+def _utc_hm(moment: datetime) -> tuple[int, int]:
+    utc = moment.astimezone(ZoneInfo("UTC"))
+    return utc.hour, utc.minute

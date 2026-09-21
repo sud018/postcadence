@@ -22,6 +22,8 @@ from agent.run import run_once
 import subprocess
 import shutil
 from agent.schedule import cron_lines, due_slots
+from agent.run import decide_preview, prepare_preview, run_once
+from agent.schedule import cron_lines, due_slots, prepare_slots
 
 console = Console()
 
@@ -191,20 +193,25 @@ def cmd_secret_push(args: argparse.Namespace) -> int:
 
 def cmd_run_due(args: argparse.Namespace) -> int:
     cfg = load_config()
-    slots = due_slots(cfg, load_state())
-    if not slots:
-        console.print("[dim]Nothing due right now.[/]")
-        return 0
+    state = load_state()
 
-    for slot in slots:
-        console.print(f"\n[cyan]=== {slot} ===[/]")
-        result = run_once(cfg, slot, dry_run=args.dry_run)
-        console.print(f"[cyan]Topic:[/] {result.topic}\n")
-        console.print(result.text)
-        if result.status == "posted":
-            console.print(f"\n[green]Posted.[/] {result.post_id}")
-        elif result.status == "dry-run":
-            console.print("\n[yellow]Dry run - nothing was published.[/]")
+    for slot in prepare_slots(cfg, state):
+        result = prepare_preview(cfg, slot)
+        console.print(f"[cyan]Draft {slot}:[/] {result.status} - {result.reason}")
+
+    for slot in due_slots(cfg, load_state()):
+        if cfg.mode == "preview":
+            result = decide_preview(cfg, slot)
+        else:
+            result = run_once(cfg, slot, dry_run=args.dry_run)
+
+        console.print(f"\n[cyan]=== {slot} ===[/] {result.status}")
+        if result.text:
+            console.print(result.text)
+        if result.post_id:
+            console.print(f"[green]Posted.[/] {result.post_id}")
+        if result.reason:
+            console.print(f"[dim]{result.reason}[/]")
     return 0
 
 def cmd_cron(args: argparse.Namespace) -> int:
@@ -271,3 +278,4 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+    

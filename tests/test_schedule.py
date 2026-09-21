@@ -59,3 +59,22 @@ def test_slot_time_keeps_the_date_and_zone():
 def test_cron_lines_cover_winter_and_summer_offsets():
     lines = cron_lines(cfg(posts_per_day=1, post_times=["09:00"]), year=2026)
     assert lines == ["0 16 * * *", "0 17 * * *"]
+
+
+def test_prepare_window_only_fires_before_the_slot():
+    preview_cfg = cfg(mode="preview", preview_minutes=30)
+    from agent.schedule import prepare_slots
+    assert prepare_slots(preview_cfg, State(), at(8, 0)) == []
+    assert prepare_slots(preview_cfg, State(), at(8, 45)) == ["09:00"]
+    assert prepare_slots(preview_cfg, State(), at(9, 5)) == []
+
+
+def test_auto_mode_never_prepares():
+    from agent.schedule import prepare_slots
+    assert prepare_slots(cfg(mode="auto"), State(), at(8, 45)) == []
+
+
+def test_preview_mode_adds_earlier_cron_lines():
+    lines = cron_lines(cfg(posts_per_day=1, post_times=["09:00"],
+                           mode="preview", preview_minutes=30), year=2026)
+    assert lines == ["30 15 * * *", "0 16 * * *", "30 16 * * *", "0 17 * * *"]

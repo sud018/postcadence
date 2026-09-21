@@ -21,6 +21,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   post:
@@ -43,6 +44,8 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: python -m agent run-due
 
       - name: Run one slot (manual)
