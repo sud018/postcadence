@@ -20,9 +20,10 @@ from agent.linkedin.poster import post_text
 from agent.llm import get_provider
 from agent.llm.base import LLMError
 from agent.run import decide_preview, prepare_preview, run_once
-from agent.schedule import cron_lines, due_slots, prepare_slots
+from agent.schedule import cron_lines, due_slots, local_now, prepare_slots
 from agent.secrets_store import KNOWN_SECRETS, delete_secret, get_secret, mask, set_secret
 from agent.state import load_state, save_state
+from agent.status import counts, next_run, post_link, recent, token_days, until
 from agent.topics import load_file, load_topics, load_typed, pick_topic, save_topics
 
 console = Console()
@@ -241,6 +242,45 @@ def cmd_token_check(args: argparse.Namespace) -> int:
             handle.write(f"expiring={'true' if expiring else 'false'}\n")
     return 0
 
+def cmd_status(args: argparse.Namespace) -> int:
+    cfg = load_config()
+    state = load_state()
+    topics = load_topics()
+    now = local_now(cfg)
+
+    slot, when = next_run(cfg, now)
+    remaining = max(0, len(topics) - state.next_topic_index)
+    days = token_days(cfg)
+
+    summary = Table(show_header=False, title="PostCadence")
+    summary.add_column("", style="dim")
+    summary.add_column("")
+    summary.add_row("Now", now.strftime("%Y-%m-%d %H:%M %Z"))
+    summary.add_row("Mode", cfg.mode)
+    summary.add_row("Next run", f"{slot} on {when.date()} ({until(when, now)})")
+    summary.add_row("Topics", f"{remaining} queued of {len(topics)}")
+    summary.add_row("Token", "unknown" if days is None else f"{days} days left")
+    tally = counts(state)
+    summary.add_row("History", ", ".join(f"{k}: {v}" for k, v in tally.items()) or "nothing yet")
+    console.print(summary)
+
+    entries = recent(state)
+    if not entries:
+        return 0
+
+    table = Table(title="Recent posts")
+    table.add_column("Date")
+    table.add_column("Slot")
+    table.add_column("Topic")
+    table.add_column("Status")
+    table.add_column("Link")
+    for entry in entries:
+        colour = {"posted": "green", "failed": "red", "skipped": "yellow"}.get(entry.status, "white")
+        table.add_row(entry.date, entry.slot, entry.topic[:40],
+                      f"[{colour}]{entry.status}[/]", post_link(entry) or entry.error[:30])
+    console.print(table)
+    return 0
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m agent", description="PostCadence agent")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -252,6 +292,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("show", help="show config, state and masked secrets").set_defaults(func=cmd_show)
     sub.add_parser("check-llm", help="verify the API key works").set_defaults(func=cmd_check_llm)
     secret = sub.add_parser("secret", help="manage secrets").add_subparsers(dest="action", required=True)
+    sub.add_parser("status", help="what the agent is doing and what it has done").set_defaults(func=cmd_status)
     linkedin = sub.add_parser("linkedin", help="LinkedIn connection").add_subparsers(
         dest="action", required=True)
     topics = sub.add_parser("topics", help="manage your topic list").add_subparsers(dest="action", required=True)
