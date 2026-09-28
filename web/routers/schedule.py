@@ -7,7 +7,7 @@ from zoneinfo import available_timezones
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
 
-from agent.config import MAX_POSTS_PER_DAY, ConfigError, load_config, save_config
+from agent.config import MAX_POSTS_PER_DAY, ConfigError, load_or_default, save_config
 from agent.schedule import cron_lines
 from web.app import templates
 from web.steps import progress
@@ -46,7 +46,7 @@ def _render(request: Request, cfg, errors: list[str] | None = None,
 
 @router.get("", response_class=HTMLResponse)
 def page(request: Request) -> HTMLResponse:
-    return _render(request, load_config())
+    return _render(request, load_or_default())
 
 
 @router.post("", response_class=HTMLResponse)
@@ -61,7 +61,7 @@ def save(
 ) -> HTMLResponse:
     times = sorted({t.strip() for t in post_times if t.strip()})
     candidate = replace(
-        load_config(),
+        load_or_default(),
         posts_per_day=len(times),
         post_times=times,
         timezone=timezone.strip(),

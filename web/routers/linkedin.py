@@ -6,7 +6,7 @@ from urllib.parse import quote
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from agent.config import load_config, save_config
+from agent.config import load_or_default, save_config
 from agent.linkedin.errors import LinkedInError
 from agent.linkedin.oauth import authorize_url, finish, new_state
 from agent.secrets_store import get_secret, mask, set_secret
@@ -33,7 +33,7 @@ def callback_url(request: Request) -> str:
 
 @router.get("", response_class=HTMLResponse)
 def page(request: Request, error: str = "", connected: int = 0) -> HTMLResponse:
-    cfg = load_config()
+    cfg = load_or_default()
     client_id = get_secret("LINKEDIN_CLIENT_ID")
     return templates.TemplateResponse(
         request=request,
@@ -90,7 +90,7 @@ def callback(request: Request, code: str = "", state: str = "", error: str = "",
         return _back(str(exc))
 
     set_secret("LINKEDIN_ACCESS_TOKEN", result["access_token"])
-    cfg = load_config()
+    cfg = load_or_default()
     cfg.linkedin_member_id = result["member_id"]
     cfg.linkedin_token_expires = result["expires_on"]
     save_config(cfg)

@@ -95,6 +95,20 @@ def load_config(path: Path | None = None) -> Config:
     return cfg
 
 
+def load_or_default(path: Path | None = None) -> Config:
+    """Your saved settings - or fresh defaults on the very first run.
+
+    Setup pages use this, because on a new clone there is no config.json yet
+    and the page that creates it cannot insist that it already exists.
+    """
+    path = path or paths.CONFIG_FILE
+    return load_config(path) if path.exists() else Config()
+
+
+def is_first_run(path: Path | None = None) -> bool:
+    return not (path or paths.CONFIG_FILE).exists()
+
+
 def save_config(cfg: Config, path: Path | None = None) -> None:
     cfg.post_times = sorted(cfg.post_times)
     cfg.validate()

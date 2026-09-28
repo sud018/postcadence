@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Settings · PostCadence{% endblock %}
+{% block content %}
+
+<section class="hero rise" style="padding:28px 32px;">
+  <div class="hero-inner">
+    <div>
+      <div class="eyebrow">Settings</div>
+      <h1 style="font-size:30px; margin-top:6px;">Everything in one place</h1>
+      <p style="color:var(--muted); margin:8px 0 0; max-width:52ch;">
+        How your posts sound, what they are connected to, and whether GitHub is running
+        the same thing you see here.
+      </p>
+    </div>
+    <a class="btn btn-ghost" href="/setup">{{ 'Start setup' if first_run else 'Run setup again' }}</a>
+  </div>
+</section>
+
+{% if error %}<div class="flash flash-bad rise" style="margin:0 0 20px;">{{ error }}</div>{% endif %}
+{% if done %}<div class="flash flash-ok rise" style="margin:0 0 20px;">{{ done }}</div>{% endif %}
+
+<section class="card rise" style="margin-bottom:20px; overflow:hidden;">
+  <div class="card-head">
+    <h2>Health</h2>
+    <span class="chip {{ 'chip-teal' if not issues else '' }}">
+      {{ 'All clear' if not issues else issues|length ~ ' to look at' }}
+    </span>
+  </div>
+  <div class="card-pad" style="padding-top:12px;">
+    {% if issues %}
+      {% include "partials/issues.html" %}
+    {% else %}
+      <p style="color:var(--muted); margin:0;">Nothing is blocking the next post. ✨</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="grid grid-3 rise" style="margin-bottom:20px;">
+
+  <div class="card card-pad">
+    <h2 style="font-size:18px;">Voice</h2>
+    <p style="color:var(--muted); font-size:14px; margin:6px 0 16px;">
+      How every post sounds, whoever writes it — this app or GitHub at 09:00.
+    </p>
+
+    <form method="post" action="/settings/voice">
+      <div class="segmented tones">
+        {% for t in tones %}
+          <label>
+            <input type="radio" name="tone" value="{{ t }}" {{ 'checked' if cfg.tone == t }}>
+            <span>{{ t|capitalize }}</span>
+          </label>
+        {% endfor %}
+      </div>
+
+      <div class="stat-label" style="margin-top:18px;">About you</div>
+      <textarea class="editor" name="author_context" rows="5" maxlength="{{ max_context }}"
+                style="min-height:120px;"
+                placeholder="e.g. Backend engineer, 8 years in fintech. Building AI agents on the side. Honest about what broke.">{{ cfg.author_context }}</textarea>
+      <p class="hint" style="margin-top:6px;">
+        The writer uses this for perspective and examples — and is told never to invent past it.
+      </p>
+
+      <button class="btn" type="submit" style="margin-top:12px;">Save voice</button>
+    </form>
+  </div>
+
+  <div class="card card-pad">
+    <h2 style="font-size:18px;">Connections</h2>
+    <div class="conns">
+      {% for c in connections %}
+        <div class="conn">
+          <div class="conn-icon">{{ c.icon }}</div>
+          <div class="conn-body">
+            <div class="conn-name">{{ c.name }}
+              <span class="dot {{ 'dot-ok' if c.ok else 'dot-bad' }}"></span>
+            </div>
+            <div class="conn-value">{{ c.value }}</div>
+            <div class="conn-note">{{ c.note }}</div>
+          </div>
+          <a class="link" href="{{ c.href }}">{{ c.action }} →</a>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="card rise" id="sync" style="overflow:hidden;">
+  <div class="card-head">
+    <h2>GitHub sync</h2>
+    <span class="sync-pill" id="sync-summary">Checking…</span>
+  </div>
+
+  <div class="card-pad" style="padding-top:12px;">
+    <p style="color:var(--muted); font-size:14px; margin:0 0 12px;">
+      Your settings travel <b>up</b> to GitHub. The post history travels <b>down</b> —
+      the workflow writes it, so GitHub's copy is the true one.
+    </p>
+
+    <ul class="filelist" id="sync-files">
+      <li><span>Asking GitHub…</span></li>
+    </ul>
+
+    <div class="rowbtns" style="margin-top:16px;">
+      <form method="post" action="/setup/github/push">
+        <input type="hidden" name="next" value="/settings">
+        <button class="btn" type="submit" id="sync-push" data-busy="Pushing…" disabled>↑ Push settings</button>
+      </form>
+      <form method="post" action="/sync/pull-state">
+        <button class="btn btn-ghost" type="submit" id="sync-pull" data-busy="Pulling…" disabled>↓ Pull post history</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 
+{% if issues %}
+  <section class="rise" style="margin-bottom:20px;">
+    {% with compact = false %}{% include "partials/issues.html" %}{% endwith %}
+  </section>
+{% endif %}
+
 <section class="hero rise">
   <div class="hero-inner">
     <div>

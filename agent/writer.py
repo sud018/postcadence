@@ -47,6 +47,12 @@ Style:
 def build_prompt(pick: Pick, cfg: Config, recent_topics: list[str] | None = None) -> str:
     parts = [f"Write a LinkedIn post about: {pick.topic}", f"Tone: {TONE_NOTES.get(cfg.tone, '')}"]
 
+    if cfg.author_context.strip():
+        parts.append(
+            "About the author (use this for perspective and examples; never invent "
+            f"beyond it): {cfg.author_context.strip()}"
+        )
+
     if pick.is_repeat:
         parts.append(
             "You have posted about this topic before, so take a clearly different angle: "

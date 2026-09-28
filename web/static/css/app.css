@@ -288,3 +288,64 @@ select.input { appearance:none; cursor:pointer; }
 .filelist li:last-child { border-bottom:none; }
 .filelist code { color:var(--brand-300); }
 .filelist span { color:var(--dim); }
+
+/* health, sync, settings -------------------------------------------------- */
+.topright { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+
+.sync-pill { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; font-size:12px;
+             border-radius:var(--radius-pill); background:var(--ink-700); color:var(--muted);
+             white-space:nowrap; }
+.sync-pill::before { content:""; width:7px; height:7px; border-radius:50%; background:var(--dim); }
+.sync-ok    { color:var(--teal-400); background:rgba(20,184,166,.12); }
+.sync-ok::before { background:var(--teal-400); }
+.sync-push, .sync-pull { color:var(--amber); background:rgba(251,191,36,.12); }
+.sync-push::before, .sync-pull::before { background:var(--amber); }
+.sync-error { color:var(--rose); background:rgba(251,113,133,.12); }
+.sync-error::before { background:var(--rose); }
+
+.issues { display:flex; flex-direction:column; gap:10px; }
+.issue { display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:14px;
+         background:var(--ink-800); border:1px solid var(--ink-700); }
+.issue-dot { flex:none; width:10px; height:10px; border-radius:50%; }
+.issue-bad  { border-color:rgba(251,113,133,.35); }
+.issue-bad  .issue-dot { background:var(--rose); box-shadow:0 0 0 4px rgba(251,113,133,.15); }
+.issue-warn { border-color:rgba(251,191,36,.30); }
+.issue-warn .issue-dot { background:var(--amber); box-shadow:0 0 0 4px rgba(251,191,36,.15); }
+.issue-info .issue-dot { background:var(--brand-400); box-shadow:0 0 0 4px rgba(129,140,248,.15); }
+.issue-body { flex:1; min-width:0; }
+.issue-title { color:var(--white); font-weight:600; font-size:14px; }
+.issue-detail { color:var(--muted); font-size:13px; margin-top:2px; }
+.btn-sm { padding:7px 14px; font-size:13px; }
+
+.conns { display:flex; flex-direction:column; gap:4px; margin-top:12px; }
+.conn { display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid var(--ink-700); }
+.conn:last-child { border-bottom:none; }
+.conn-icon { width:40px; height:40px; border-radius:12px; display:grid; place-items:center;
+             background:var(--ink-700); font-size:18px; flex:none; }
+.conn-body { flex:1; min-width:0; }
+.conn-name { color:var(--white); font-weight:600; font-size:14px; display:flex; align-items:center; gap:8px; }
+.conn-value { font-size:13px; color:var(--text); overflow-wrap:anywhere; }
+.conn-note { font-size:12px; color:var(--dim); }
+.dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+.dot-ok { background:var(--teal-400); }
+.dot-bad { background:var(--rose); }
+
+.tones { display:flex; flex-wrap:wrap; }
+.tones input { position:absolute; opacity:0; pointer-events:none; }
+.tones span { display:inline-block; padding:9px 16px; border-radius:11px; font-size:14px; cursor:pointer;
+              border:1px solid var(--ink-700); background:var(--ink-900); color:var(--muted); transition:.15s; }
+.tones span:hover { color:var(--white); border-color:var(--ink-600); }
+.tones input:checked + span { background:var(--brand-500); border-color:var(--brand-500); color:#fff; }
+.tones input:focus-visible + span { box-shadow:0 0 0 3px rgba(99,102,241,.35); }
+.fs-same { color:var(--teal-400) !important; }
+.fs-changed, .fs-missing { color:var(--amber) !important; }
+
+.welcome-steps { list-style:none; counter-reset:step; margin:0; padding:0; display:grid;
+                 grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px; }
+.welcome-steps li { counter-increment:step; padding:16px; border-radius:14px;
+                    background:rgba(255,255,255,.03); border:1px solid var(--ink-700); }
+.welcome-steps li::before { content:counter(step); display:grid; place-items:center; width:26px; height:26px;
+  border-radius:50%; margin-bottom:10px; font-size:13px; font-weight:700; color:#fff;
+  background:linear-gradient(135deg,var(--brand-500),var(--teal-500)); }
+.welcome-steps b { display:block; color:var(--white); }
+.welcome-steps span { font-size:13px; color:var(--muted); }

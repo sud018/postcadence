@@ -1,7 +1,7 @@
 """Which setup steps are finished, worked out from the real config and keyring."""
 from __future__ import annotations
 
-from agent.config import load_config
+from agent.config import load_or_default
 from agent.llm import KEY_NAMES
 from agent.schedule import cron_lines
 from agent.secrets_store import get_secret
@@ -18,7 +18,7 @@ STEPS = [
 
 
 def completed() -> dict[str, bool]:
-    cfg = load_config()
+    cfg = load_or_default()
     key_name = KEY_NAMES.get(cfg.llm_provider)
     path = workflow_path()
     in_step = path.exists() and set(current_cron(path.read_text(encoding="utf-8"))) == set(cron_lines(cfg))

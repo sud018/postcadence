@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from agent import drafts as book
 from agent import run
-from agent.config import load_config
+from agent.config import load_or_default
 from agent.linkedin.errors import LinkedInError
 from agent.llm.base import LLMError
 from agent.secrets_store import get_secret
@@ -38,7 +38,7 @@ def _connected(cfg) -> bool:
 @router.get("", response_class=HTMLResponse)
 def page(request: Request, posted: str = "", error: str = "", saved: str = "",
          skipped: str = "") -> HTMLResponse:
-    cfg = load_config()
+    cfg = load_or_default()
     return templates.TemplateResponse(
         request=request,
         name="pages/drafts.html",
@@ -62,7 +62,7 @@ def page(request: Request, posted: str = "", error: str = "", saved: str = "",
 @router.post("/new")
 def new(slot: str = Form("")) -> RedirectResponse:
     """Ask the model for a post. The topic bookmark does not move yet."""
-    cfg = load_config()
+    cfg = load_or_default()
     slot = slot or (cfg.post_times[0] if cfg.post_times else "09:00")
     try:
         pick, text = run.compose(cfg, slot)
@@ -92,7 +92,7 @@ def rewrite(draft_id: str) -> RedirectResponse:
     if draft is None:
         return _back(error="That draft is no longer here.")
 
-    cfg = load_config()
+    cfg = load_or_default()
     try:
         _, text = run.compose(cfg, draft.slot)
     except (LLMError, TopicError) as exc:
@@ -108,7 +108,7 @@ def publish(draft_id: str) -> RedirectResponse:
     if draft is None:
         return _back(error="That draft is no longer here.")
 
-    cfg = load_config()
+    cfg = load_or_default()
     try:
         post_id = run.publish(cfg, draft.pick, draft.slot, draft.text, draft.date)
     except LinkedInError as exc:
@@ -125,7 +125,7 @@ def skip(draft_id: str) -> RedirectResponse:
     if draft is None:
         return _back(error="That draft is no longer here.")
 
-    run.record_skip(load_config(), draft.pick, draft.slot, draft.date)
+    run.record_skip(load_or_default(), draft.pick, draft.slot, draft.date)
     book.remove(draft_id)
     return _back(skipped="1")
 

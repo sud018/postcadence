@@ -4,7 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
 
-from agent.config import PROVIDERS, load_config, save_config
+from agent.config import PROVIDERS, load_or_default, save_config
 from agent.llm import KEY_NAMES, build
 from agent.llm.base import AuthError, LLMError
 from agent.llm.catalog import known_models
@@ -28,7 +28,7 @@ PROVIDER_CARDS = [
 
 def _state() -> dict:
     """What the wizard already knows, read from the real config and keyring."""
-    cfg = load_config()
+    cfg = load_or_default()
     key_name = KEY_NAMES.get(cfg.llm_provider)
     key = get_secret(key_name) if key_name else None
     return {
@@ -60,7 +60,7 @@ def save_provider(request: Request, provider: str = Form(...), api_key: str = Fo
         if not api_key:
             return _result(request, error="Paste a key to continue.")
 
-    cfg = load_config()
+    cfg = load_or_default()
     cfg.llm_provider = provider
     probe = _probe(provider, api_key, cfg.llm_model)
 
@@ -88,7 +88,7 @@ def _probe(provider: str, api_key: str, model: str) -> dict:
 
 def _result(request: Request, reply: str = "", models: list[str] | None = None,
             provider: str = "", error: str = "") -> HTMLResponse:
-    cfg = load_config()
+    cfg = load_or_default()
     return templates.TemplateResponse(
         request=request,
         name="partials/provider_result.html",
@@ -99,7 +99,7 @@ def _result(request: Request, reply: str = "", models: list[str] | None = None,
 
 @router.post("/model", response_class=HTMLResponse)
 def save_model(request: Request, model: str = Form(...)) -> HTMLResponse:
-    cfg = load_config()
+    cfg = load_or_default()
     cfg.llm_model = model.strip()
     save_config(cfg)
     return templates.TemplateResponse(
@@ -109,7 +109,7 @@ def save_model(request: Request, model: str = Form(...)) -> HTMLResponse:
 @router.get("/models", response_class=HTMLResponse)
 def models_for(request: Request, provider: str = "") -> HTMLResponse:
     """The usual models for a provider, offered before any key is checked."""
-    cfg = load_config()
+    cfg = load_or_default()
     provider = provider or cfg.llm_provider
     return templates.TemplateResponse(
         request=request,

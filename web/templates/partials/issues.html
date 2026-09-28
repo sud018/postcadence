@@ -1,0 +1,15 @@
+{# What could stop the next post, worst first. Pass `issues` and optionally `compact`. #}
+{% if issues %}
+  <div class="issues {{ 'is-compact' if compact }}">
+    {% for i in issues %}
+      <div class="issue issue-{{ i.level }}">
+        <div class="issue-dot"></div>
+        <div class="issue-body">
+          <div class="issue-title">{{ i.title }}</div>
+          {% if not compact %}<div class="issue-detail">{{ i.detail }}</div>{% endif %}
+        </div>
+        <a class="btn btn-ghost btn-sm" href="{{ i.href }}">{{ i.action }}</a>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}

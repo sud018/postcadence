@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/static/css/app.css">
   <script src="/static/js/htmx.min.js" defer></script>
+  <script src="/static/js/sync.js" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -22,11 +23,16 @@
       </div>
     </a>
 
-    <nav class="nav">
-      {% for href, label in [('/', 'Dashboard'), ('/drafts', 'Drafts'), ('/topics', 'Topics'), ('/setup', 'Setup')] %}
-        <a href="{{ href }}" class="{{ 'is-active' if request.url.path == href }}">{{ label }}</a>
-      {% endfor %}
-    </nav>
+    <div class="topright">
+      <a id="sync-badge" class="sync-pill" href="/settings#sync" hidden></a>
+      <nav class="nav">
+        {% set path = request.url.path %}
+        {% for href, label in [('/', 'Dashboard'), ('/drafts', 'Drafts'), ('/topics', 'Topics'), ('/settings', 'Settings')] %}
+          {% set active = path == href or (href == '/settings' and path.startswith('/setup')) %}
+          <a href="{{ href }}" class="{{ 'is-active' if active }}">{{ label }}</a>
+        {% endfor %}
+      </nav>
+    </div>
   </header>
 
   {% block content %}{% endblock %}

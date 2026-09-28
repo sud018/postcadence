@@ -6,34 +6,34 @@ import dataclasses
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
-from agent import paths
-from agent.config import load_config, save_config
-from agent.github import api, device, repo_secrets
+from agent.config import load_or_default, save_config
+from agent.github import api, device, repo_secrets, sync
 from agent.github.errors import GitHubError
 from agent.llm import KEY_NAMES
 from agent.secrets_store import get_secret, set_secret
 from web.app import templates
+from web.routers.sync import forget_sync_cache
 from web.steps import progress
-from web.workflow import workflow_path
 
 router = APIRouter(prefix="/setup/github")
 
-# Files the app keeps in step with GitHub. state.json is missing on purpose:
-# the workflow writes that one, so pushing it from here would undo a real run.
-SYNCED = (
-    ("data/config.json", "your settings"),
-    ("data/topics.json", "your topic list"),
-    (".github/workflows/post.yml", "the schedule"),
-)
+# Files the app pushes. state.json is missing on purpose: the workflow writes
+# that one, so pushing it from here would undo a real run (see agent/github/sync.py).
+SYNCED = sync.UP
 
 # One pending sign-in at a time - this is a single-user app on your own machine.
 _pending: dict[str, str] = {}
 
 
-def _back(**flash: str) -> RedirectResponse:
+# Pages allowed to ask for the user to be sent back to them after an action.
+RETURN_TO = {"/setup/github", "/settings"}
+
+
+def _back(to: str = "/setup/github", **flash: str) -> RedirectResponse:
     from urllib.parse import urlencode
+    to = to if to in RETURN_TO else "/setup/github"       # never redirect anywhere else
     query = urlencode({k: v for k, v in flash.items() if v})
-    return RedirectResponse(f"/setup/github{'?' + query if query else ''}", status_code=303)
+    return RedirectResponse(f"{to}{'?' + query if query else ''}", status_code=303)
 
 
 def _token() -> str:
@@ -48,14 +48,12 @@ def _local_secrets(cfg) -> list[str]:
 
 def _repo_file(path: str) -> str:
     """Read one of the synced files from disk."""
-    if path.startswith("data/"):
-        return (paths.DATA_DIR / path.split("/", 1)[1]).read_text(encoding="utf-8")
-    return workflow_path().read_text(encoding="utf-8")
+    return sync.local_text(path)
 
 
 @router.get("", response_class=HTMLResponse)
 def page(request: Request, error: str = "", done: str = "") -> HTMLResponse:
-    cfg = load_config()
+    cfg = load_or_default()
     token = _token()
     login, runs, on_github = "", [], []
 
@@ -90,7 +88,7 @@ def page(request: Request, error: str = "", done: str = "") -> HTMLResponse:
 
 @router.post("/client")
 def save_client(client_id: str = Form(""), repo: str = Form("")) -> RedirectResponse:
-    cfg = dataclasses.replace(load_config(),
+    cfg = dataclasses.replace(load_or_default(),
                               github_client_id=client_id.strip(),
                               github_repo=repo.strip())
     save_config(cfg)
@@ -100,7 +98,7 @@ def save_client(client_id: str = Form(""), repo: str = Form("")) -> RedirectResp
 @router.post("/start")
 def start() -> JSONResponse:
     """Ask GitHub for the code you type on github.com/login/device."""
-    cfg = load_config()
+    cfg = load_or_default()
     try:
         flow = device.start(cfg.github_client_id)
     except GitHubError as exc:
@@ -117,7 +115,7 @@ def start() -> JSONResponse:
 @router.post("/poll")
 def poll() -> JSONResponse:
     """Called every few seconds by the page until you approve on GitHub."""
-    cfg = load_config()
+    cfg = load_or_default()
     code = _pending.get("device_code")
     if not code:
         return JSONResponse({"error": "Nothing to wait for. Press Connect again."}, status_code=400)
@@ -137,32 +135,33 @@ def poll() -> JSONResponse:
 
 
 @router.post("/push")
-def push() -> RedirectResponse:
+def push(next: str = Form("/setup/github")) -> RedirectResponse:
     """Copy the local settings into the repo, one commit per changed file."""
-    cfg = load_config()
+    cfg = load_or_default()
     token = _token()
     if not (token and cfg.github_repo):
-        return _back(error="Connect GitHub and set the repository first.")
+        return _back(next, error="Connect GitHub and set the repository first.")
 
     changed: list[str] = []
     try:
         for path, label in SYNCED:
-            text = _repo_file(path)
+            text = _repo_file(path).replace("\r\n", "\n")   # GitHub keeps LF
             remote, _ = api.get_file(cfg.github_repo, path, token)
-            if remote == text:
+            if sync.same_text(remote, text):
                 continue
             api.put_file(cfg.github_repo, path, text, f"chore: update {label} from PostCadence", token)
             changed.append(path)
     except (GitHubError, OSError) as exc:
-        return _back(error=str(exc))
+        return _back(next, error=str(exc))
 
-    return _back(done=f"Pushed {len(changed)} file(s)." if changed else "Everything already matched.")
+    forget_sync_cache()
+    return _back(next, done=f"Pushed {len(changed)} file(s)." if changed else "Everything already matched.")
 
 
 @router.post("/secrets")
 def send_secrets() -> RedirectResponse:
     """Encrypt each local secret and store it on the repository."""
-    cfg = load_config()
+    cfg = load_or_default()
     token = _token()
     if not (token and cfg.github_repo):
         return _back(error="Connect GitHub and set the repository first.")

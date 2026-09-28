@@ -1,13 +1,25 @@
 {% extends "base.html" %}
+{% block title %}Welcome · PostCadence{% endblock %}
 {% block content %}
-<section class="hero rise" style="text-align:center; padding:64px 32px;">
-  <div class="hero-inner" style="justify-content:center;">
-    <div>
-      <div style="font-size:44px; margin-bottom:12px;">👋</div>
-      <h1 style="font-size:28px; margin-bottom:8px;">Let's set things up</h1>
-      <p style="color:var(--muted); margin:0 0 24px;">{{ error }}</p>
-      <a class="btn" href="/setup">Start setup</a>
-    </div>
+<section class="hero rise" style="padding:56px 40px;">
+  <div class="hero-inner" style="display:block;">
+    <div class="eyebrow">Welcome</div>
+    <h1 style="font-size:34px; margin:8px 0 10px;">Your ideas, posted on schedule.</h1>
+    <p style="color:var(--muted); margin:0 0 28px; max-width:58ch;">
+      PostCadence takes a list of topics, has the model of your choice write a post for each,
+      and publishes them to LinkedIn at your times — even with this laptop shut.
+      Five short steps and it runs on its own.
+    </p>
+
+    <ol class="welcome-steps">
+      <li><b>Writer</b><span>Pick a model and paste its key.</span></li>
+      <li><b>LinkedIn</b><span>Sign in once; the token lasts 60 days.</span></li>
+      <li><b>Schedule</b><span>How many posts a day, and when.</span></li>
+      <li><b>Topics</b><span>Type them, or drop in an Excel, Word or PDF file.</span></li>
+      <li><b>GitHub</b><span>So posting keeps going while you sleep.</span></li>
+    </ol>
+
+    <a class="btn" href="/setup" style="margin-top:28px;">Start setup →</a>
   </div>
 </section>
 {% endblock %}
