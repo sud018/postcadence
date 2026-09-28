@@ -17,11 +17,13 @@ def create_app() -> FastAPI:
     app = FastAPI(title="PostCadence", version=__version__, docs_url=None, redoc_url=None)
     app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="static")
 
-    from web.routers import dashboard, topics, wizard
+    from web.routers import dashboard, linkedin, schedule, topics, wizard
 
     app.include_router(dashboard.router)
     app.include_router(topics.router)
     app.include_router(wizard.router)
+    app.include_router(linkedin.router)
+    app.include_router(schedule.router)
     return app
 
 

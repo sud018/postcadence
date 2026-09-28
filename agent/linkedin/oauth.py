@@ -46,13 +46,15 @@ def _wait_for_redirect(timeout: int = 180) -> dict:
     server.server_close()
     return _CallbackHandler.result
 
-def _exchange_code(code: str, client_id: str, client_secret: str)-> dict:
+def exchange_code(code: str, client_id: str, client_secret: str,
+                  redirect_uri: str = REDIRECT_URI) -> dict:
+    """Swap a one-time code for an access token. redirect_uri must match the one used to start."""
     response = requests.post(
         TOKEN_URL,
         data = {
             "grant_type": "authorization_code",
             "code": code,
-            "redirect_uri": REDIRECT_URI,
+            "redirect_uri": redirect_uri,
             "client_id": client_id,
             "client_secret": client_secret
         }, timeout=30,
@@ -62,7 +64,7 @@ def _exchange_code(code: str, client_id: str, client_secret: str)-> dict:
         raise LinkedInError(f"Token exchange failed ({response.status_code}): {response.text[:300]}")
     return response.json()
 
-def _fetch_member_id(access_token: str) -> str:
+def fetch_member_id(access_token: str) -> str:
     response = requests.get(
         USERINFO_URL,
         headers={"Authorization": f"Bearer {access_token}"},
@@ -72,17 +74,38 @@ def _fetch_member_id(access_token: str) -> str:
         raise LinkedInError(f"Could not read your profile ({response.status_code}): {response.text[:300]}")
     return response.json()["sub"]
 
-def connect(client_id: str, client_secret: str) -> dict:
-    """Run the whole sign-in flow. Returns token, member id and expiry date."""
-
-    state = randomness.token_urlsafe(16)
-    url = AUTH_URL + "?" + urlencode({
+def authorize_url(client_id: str, redirect_uri: str, state: str) -> str:
+    """Where to send the browser to ask the user for permission."""
+    return AUTH_URL + "?" + urlencode({
         "response_type": "code",
         "client_id": client_id,
-        "redirect_uri": REDIRECT_URI,
+        "redirect_uri": redirect_uri,
         "state": state,
         "scope": SCOPES,
     })
+
+
+def finish(code: str, client_id: str, client_secret: str, redirect_uri: str) -> dict:
+    """Everything after the redirect: token, member id and expiry date."""
+    token = exchange_code(code, client_id, client_secret, redirect_uri)
+    access_token = token["access_token"]
+    expires_on = date.today() + timedelta(seconds=int(token.get("expires_in", 0)))
+    return {
+        "access_token": access_token,
+        "member_id": fetch_member_id(access_token),
+        "expires_on": expires_on.isoformat(),
+    }
+
+
+def new_state() -> str:
+    return randomness.token_urlsafe(16)
+
+
+def connect(client_id: str, client_secret: str) -> dict:
+    """Run the whole sign-in flow. Returns token, member id and expiry date."""
+
+    state = new_state()
+    url = authorize_url(client_id, REDIRECT_URI, state)
 
     print("Opening your browser to sign in to LinkedIn...")
     webbrowser.open(url)
@@ -96,13 +119,4 @@ def connect(client_id: str, client_secret: str) -> dict:
     if result.get("state") != state:
         raise LinkedInError("State did not match - ignoring this response.")
 
-    token = _exchange_code(result["code"], client_id, client_secret)
-    access_token = token["access_token"]
-    member_id = _fetch_member_id(access_token)
-    expires_on = date.today() + timedelta(seconds=int(token.get("expires_in", 0)))
-
-    return {
-        "access_token": access_token,
-        "member_id": member_id,
-        "expires_on": expires_on.isoformat(),
-    }
+    return finish(result["code"], client_id, client_secret, REDIRECT_URI)

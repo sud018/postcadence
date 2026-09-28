@@ -10,6 +10,7 @@ from agent.llm.base import AuthError, LLMError
 from agent.llm.catalog import known_models
 from agent.secrets_store import get_secret, mask, set_secret
 from web.app import templates
+from web.steps import progress
 
 router = APIRouter(prefix="/setup")
 
@@ -36,6 +37,7 @@ def _state() -> dict:
         "selected": cfg.llm_provider,
         "key_set": bool(key) or key_name is None,
         "masked": mask(key) if key else "",
+        "steps": progress("model"),
     }
 
 

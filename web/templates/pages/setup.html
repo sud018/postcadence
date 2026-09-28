@@ -2,10 +2,12 @@
 {% block title %}Setup · PostCadence{% endblock %}
 {% block content %}
 
+{% include "partials/stepper.html" %}
+
 <section class="hero rise" style="padding:28px 32px;">
   <div class="hero-inner">
     <div>
-      <div class="eyebrow">Setup · step 1 of 5</div>
+      <div class="eyebrow">Setup · the writer</div>
       <h1 style="font-size:30px; margin-top:6px;">Which model writes your posts?</h1>
       <p style="color:var(--muted); margin:8px 0 0;">
         Your key is checked with a real call, then stored in Windows Credential Manager — never in a file.
@@ -47,9 +49,9 @@
   <div style="display:flex; justify-content:space-between; align-items:center;">
     <div>
       <h2 style="font-size:18px;">Next: connect LinkedIn</h2>
-      <p style="color:var(--muted); margin:6px 0 0; font-size:14px;">Available on day 4.</p>
+      <p style="color:var(--muted); margin:6px 0 0; font-size:14px;">Sign in once; the token lasts 60 days.</p>
     </div>
-    <button class="btn btn-ghost" disabled>Continue →</button>
+    <a class="btn" href="/setup/linkedin">Continue →</a>
   </div>
 </section>
 

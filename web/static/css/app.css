@@ -189,3 +189,39 @@ h1,h2,h3 { color:var(--white); margin:0; letter-spacing:-.02em; }
 .hint { margin:10px 2px 0; font-size:13px; color:var(--dim); }
 .hint code { background:var(--ink-900); padding:2px 6px; border-radius:6px; color:var(--muted); }
 select.input { appearance:none; cursor:pointer; }
+
+/* wizard stepper ---------------------------------------------------------- */
+.stepper { display:flex; align-items:center; gap:10px; margin:-8px 0 20px; flex-wrap:wrap; }
+.step { display:flex; align-items:center; gap:8px; color:var(--dim); font-size:14px; }
+.step-dot { display:grid; place-items:center; width:28px; height:28px; border-radius:50%;
+            background:var(--ink-700); color:var(--muted); font-size:13px; font-weight:600; }
+.step.is-done .step-dot { background:rgba(20,184,166,.18); color:var(--teal-400); }
+.step.is-current .step-dot { background:linear-gradient(135deg,var(--brand-500),var(--teal-500)); color:#fff; }
+.step.is-current { color:var(--white); }
+.step-line { flex:1; min-width:24px; height:2px; border-radius:2px; background:var(--ink-700); }
+.step-line.is-done { background:rgba(20,184,166,.45); }
+
+.pcard.is-soon { opacity:.45; cursor:not-allowed; }
+.pcard.is-soon:hover { transform:none; border-color:var(--ink-700); }
+
+.copyrow { display:flex; align-items:center; gap:8px; margin-top:8px; padding:10px 12px;
+           background:var(--ink-900); border:1px solid var(--ink-700); border-radius:12px; }
+.copyrow code { flex:1; color:var(--brand-300); font-size:13px; overflow-wrap:anywhere; }
+.status-ok { padding:16px; border-radius:14px; background:rgba(20,184,166,.08); border:1px solid rgba(20,184,166,.25); }
+.status-big { font-size:22px; font-weight:600; color:var(--teal-400); margin-bottom:6px; }
+
+.segmented { display:inline-flex; gap:6px; margin-top:8px; }
+.segmented button { width:42px; height:40px; border-radius:11px; border:1px solid var(--ink-700);
+                    background:var(--ink-900); color:var(--muted); font:inherit; cursor:pointer; transition:.15s; }
+.segmented button.is-on { background:var(--brand-500); border-color:var(--brand-500); color:#fff; }
+.times { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin-top:8px; }
+.times .input { color-scheme:dark; }
+.unit { align-self:center; color:var(--muted); font-size:14px; white-space:nowrap; }
+.radio { display:flex; gap:12px; padding:12px; border-radius:12px; cursor:pointer; margin-bottom:8px;
+         border:1px solid var(--ink-700); }
+.radio:has(input:checked) { border-color:var(--brand-500); background:rgba(99,102,241,.08); }
+.radio small { color:var(--muted); }
+.radio input { accent-color:var(--brand-500); margin-top:4px; }
+
+/* stacked forms: one full-width field per row */
+.stack .input { display:block; width:100%; }

@@ -7,9 +7,11 @@
     "09:00"
   ],
   "mode": "preview",
-  "tone": "professional",
   "preview_minutes": 30,
   "preview_timeout_action": "post",
+  "catch_up_hours": 6,
+  "tone": "professional",
+  "author_context": "",
   "linkedin_member_id": "gO0v4mD6yc",
-  "linkedin_token_expires": "2026-11-16"
+  "linkedin_token_expires": "2026-11-25"
 }

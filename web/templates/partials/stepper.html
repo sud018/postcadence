@@ -1,0 +1,9 @@
+<nav class="stepper rise">
+  {% for s in steps %}
+    <a href="{{ s.href }}" class="step {{ 'is-current' if s.current }} {{ 'is-done' if s.done }}">
+      <span class="step-dot">{{ '✓' if s.done and not s.current else s.number }}</span>
+      <span class="step-label">{{ s.label }}</span>
+    </a>
+    {% if not loop.last %}<span class="step-line {{ 'is-done' if s.done }}"></span>{% endif %}
+  {% endfor %}
+</nav>

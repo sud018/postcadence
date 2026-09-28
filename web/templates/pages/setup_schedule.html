@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Schedule · PostCadence{% endblock %}
+{% block content %}
+
+{% include "partials/stepper.html" %}
+
+<section class="hero rise" style="padding:28px 32px;">
+  <div class="hero-inner">
+    <div>
+      <div class="eyebrow">Setup · when to post</div>
+      <h1 style="font-size:30px; margin-top:6px;">Your posting rhythm</h1>
+      <p style="color:var(--muted); margin:8px 0 0;">
+        Saving updates your config <b>and</b> the cron in <code>post.yml</code>, so the two can't drift apart.
+      </p>
+    </div>
+  </div>
+</section>
+
+{% for e in errors %}<div class="flash flash-bad rise" style="margin:0 0 12px;">{{ e }}</div>{% endfor %}
+
+<form method="post" action="/setup/schedule" id="schedule-form">
+<section class="grid grid-3 rise">
+  <div class="card card-pad">
+    <h2 style="font-size:18px; margin-bottom:14px;">Times</h2>
+
+    <div class="stat-label">Posts per day</div>
+    <div class="segmented" id="count">
+      {% for n in range(1, max_posts + 1) %}
+        <button type="button" data-n="{{ n }}" class="{{ 'is-on' if n == cfg.post_times|length }}">{{ n }}</button>
+      {% endfor %}
+    </div>
+
+    <div class="stat-label" style="margin-top:18px;">At</div>
+    <div id="times" class="times">
+      {% for t in cfg.post_times %}
+        <input class="input" type="time" name="post_times" value="{{ t }}" required>
+      {% endfor %}
+    </div>
+
+    <div class="stat-label" style="margin-top:18px;">Timezone</div>
+    <div class="keyrow" style="margin-top:6px;">
+      <select class="input" name="timezone" id="tz">
+        {% for z in zones %}<option value="{{ z }}" {% if z == cfg.timezone %}selected{% endif %}>{{ z }}</option>{% endfor %}
+      </select>
+      <button class="btn btn-ghost" type="button" id="detect">Use mine</button>
+    </div>
+  </div>
+
+  <div class="card card-pad">
+    <h2 style="font-size:18px; margin-bottom:14px;">Review</h2>
+
+    <label class="radio"><input type="radio" name="mode" value="auto" {% if cfg.mode == 'auto' %}checked{% endif %}>
+      <span><b>Post automatically</b><br><small>Writes and publishes at the time.</small></span></label>
+    <label class="radio"><input type="radio" name="mode" value="preview" {% if cfg.mode == 'preview' %}checked{% endif %}>
+      <span><b>Let me review first</b><br><small>A draft appears as a GitHub issue before each post.</small></span></label>
+
+    <div id="preview-opts" style="margin-top:14px;">
+      <div class="stat-label">Draft appears</div>
+      <div class="keyrow" style="margin-top:6px;">
+        <input class="input" type="number" name="preview_minutes" min="5" max="240" value="{{ cfg.preview_minutes }}">
+        <span class="unit">minutes before</span>
+      </div>
+      <div class="stat-label" style="margin-top:12px;">If I don't respond</div>
+      <select class="input" name="preview_timeout_action" style="margin-top:6px;">
+        <option value="post" {% if cfg.preview_timeout_action == 'post' %}selected{% endif %}>Publish it anyway</option>
+        <option value="skip" {% if cfg.preview_timeout_action == 'skip' %}selected{% endif %}>Skip that post</option>
+      </select>
+    </div>
+
+    <div class="stat-label" style="margin-top:14px;">Catch up missed posts for</div>
+    <div class="keyrow" style="margin-top:6px;">
+      <input class="input" type="number" name="catch_up_hours" min="1" max="24" value="{{ cfg.catch_up_hours }}">
+      <span class="unit">hours</span>
+    </div>
+  </div>
+</section>
+
+<section class="card card-pad rise">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+    <div>
+      <h2 style="font-size:18px;">GitHub will wake up at (UTC)</h2>
+      <div class="chips" style="margin-top:10px;">
+        {% for line in cron %}<span class="chip"><code>{{ line }}</code></span>{% endfor %}
+      </div>
+      <p style="color:var(--muted); font-size:13px; margin-top:8px;">These show your saved schedule. They refresh after you press Save.</p>
+    </div>
+    <button class="btn" type="submit">Save schedule</button>
+  </div>
+
+  {% if saved %}
+    <div class="flash flash-ok" style="margin:16px 0 0;">
+      Saved.
+      {% if changed %}<b>post.yml was updated</b> — commit and push for GitHub to use it:
+        <code>git add . ; git commit -m "Update posting schedule" ; git push</code>
+      {% else %}post.yml already matched, nothing to push.{% endif %}
+    </div>
+  {% endif %}
+</section>
+</form>
+
+<script src="/static/js/schedule.js" defer></script>
+{% endblock %}
