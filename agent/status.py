@@ -47,8 +47,14 @@ def recent(state: State, limit: int = 5) -> list[HistoryEntry]:
     return list(reversed(state.history[-limit:]))
 
 
+def link_for_id(post_id: str) -> str:
+    """The public URL of a post, from its LinkedIn id."""
+    return POST_URL.format(urn=post_id) if post_id else ""
+
+
 def post_link(entry: HistoryEntry) -> str:
-    return POST_URL.format(urn=entry.post_id) if entry.post_id else ""
+    return link_for_id(entry.post_id)
+
 
 def posted_dates(state: State) -> set[str]:
     """Every local date that has at least one published post."""

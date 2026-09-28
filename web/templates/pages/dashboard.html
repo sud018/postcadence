@@ -15,7 +15,7 @@
         <span class="chip">{{ d.cfg.llm_model or 'gpt-4o-mini' }}</span>
       </div>
     </div>
-    <button class="btn" disabled title="Coming on day 5">Post now</button>
+    <a class="btn" href="/drafts">✍️ Write a draft</a>
   </div>
 </section>
 
@@ -71,7 +71,7 @@
 <section class="card rise" style="overflow:hidden;">
   <div class="card-head">
     <h2>Recent posts</h2>
-    <a class="link" href="/history">Full history →</a>
+    <a class="link" href="/drafts">Drafts →</a>
   </div>
 
   {% if not d.recent %}

@@ -1,0 +1,70 @@
+{# One draft: your editor on the left, LinkedIn's view of it on the right. #}
+<article class="card draft" id="draft-{{ d.id }}">
+
+  <div class="card-head">
+    <div>
+      <div class="stat-label">{{ d.slot }} · {{ d.date }}</div>
+      <h2 style="font-size:17px; margin-top:4px;">{{ d.topic }}</h2>
+    </div>
+    <div class="chips">
+      {% if d.is_repeat %}<span class="chip chip-warn">repeat topic</span>{% endif %}
+      <span class="chip">topic #{{ d.topic_index + 1 }}</span>
+    </div>
+  </div>
+
+  <div class="draft-body">
+
+    <form method="post" action="/drafts/{{ d.id }}/save" class="draft-edit">
+      <textarea class="editor" name="text" rows="14" maxlength="{{ max_length }}"
+                data-mirror="preview-{{ d.id }}"
+                data-count="count-{{ d.id }}"
+                data-hook="hook-{{ d.id }}">{{ d.text }}</textarea>
+
+      <div class="meter">
+        <span id="count-{{ d.id }}"></span>
+        <span id="hook-{{ d.id }}"></span>
+      </div>
+
+      <div class="rowbtns">
+        <button class="btn btn-ghost" type="submit">Save edit</button>
+        <button class="btn btn-ghost" type="submit" form="rewrite-{{ d.id }}" data-busy="Rewriting…">Rewrite</button>
+      </div>
+    </form>
+
+    <div class="li-side">
+    <div class="li-post">
+      <div class="li-head">
+        <div class="li-avatar">🧑</div>
+        <div>
+          <div class="li-name">You</div>
+          <div class="li-sub">Now · 🌐</div>
+        </div>
+      </div>
+      <div class="li-text" id="preview-{{ d.id }}">{{ d.text }}</div>
+      <div class="li-actions">
+        <span>👍 Like</span><span>💬 Comment</span><span>🔁 Repost</span><span>➤ Send</span>
+      </div>
+    </div>
+
+      <p class="li-hint">This is the fold. Everything after “see more” is only read by people
+        your hook already convinced — click the post to unfold it.</p>
+    </div>
+
+  </div>
+
+  <div class="draft-foot">
+    <form method="post" action="/drafts/{{ d.id }}/rewrite" id="rewrite-{{ d.id }}"></form>
+    <form method="post" action="/drafts/{{ d.id }}/discard">
+      <button class="btn btn-ghost" type="submit">Discard</button>
+    </form>
+    <form method="post" action="/drafts/{{ d.id }}/skip">
+      <button class="btn btn-ghost" type="submit">Skip this slot</button>
+    </form>
+    <form method="post" action="/drafts/{{ d.id }}/post">
+      <button class="btn" type="submit" data-busy="Posting…" {{ '' if connected else 'disabled' }}>
+        Approve &amp; post now
+      </button>
+    </form>
+  </div>
+
+</article>

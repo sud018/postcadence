@@ -27,4 +27,5 @@ def sandbox_data(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, "CONFIG_FILE", tmp_path / "config.json")
     monkeypatch.setattr(paths, "STATE_FILE", tmp_path / "state.json")
     monkeypatch.setattr(paths, "TOPICS_FILE", tmp_path / "topics.json")
+    monkeypatch.setattr(paths, "DRAFTS_FILE", tmp_path / "drafts.json")
     yield

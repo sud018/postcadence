@@ -20,3 +20,6 @@ data/.*.tmp
 Thumbs.db
 
 .ruff_cache/
+
+# Local drafts waiting for approval - yours only, not the scheduler's
+data/drafts.json

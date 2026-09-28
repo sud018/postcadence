@@ -11,8 +11,8 @@ from agent.formatter import format_post
 from agent.linkedin.errors import LinkedInAuthError, LinkedInError
 from agent.linkedin.poster import post_text
 from agent.secrets_store import get_secret
-from agent.state import HistoryEntry, load_state, save_state
-from agent.topics import advance, load_topics, pick_topic
+from agent.state import HistoryEntry, State, load_state, save_state
+from agent.topics import Pick, advance, load_topics, pick_topic
 from agent.writer import write_post
 
 RECENT_COUNT = 3
@@ -20,7 +20,7 @@ RECENT_COUNT = 3
 
 @dataclass
 class RunResult:
-    status: str
+    status: str        # posted / skipped / failed / dry-run
     topic: str
     text: str = ""
     post_id: str = ""
@@ -36,23 +36,34 @@ def _recent_topics(state, limit: int = RECENT_COUNT) -> list[str]:
     return seen[:limit]
 
 
-def run_once(cfg: Config, slot: str, dry_run: bool = False, force: bool = False) -> RunResult:
-    today = today_in(cfg)
-    state = load_state()
+NOT_CONNECTED = ("Not connected to LinkedIn. Connect it on the Setup page, "
+                 "or run: python -m agent linkedin connect")
 
-    if state.already_handled(today, slot) and not force:
-        return RunResult(status="skipped", topic="", reason=f"{today} {slot} was already handled")
 
-    pick = pick_topic(load_topics(), state, slot, today)
+def compose(cfg: Config, slot: str, state: State | None = None) -> tuple[Pick, str]:
+    """Pick a topic and write the post - no posting, no state changes.
+
+    Shared by the scheduled run, preview mode and the Drafts page, so all three
+    produce exactly the same text for a slot.
+    """
+    state = state if state is not None else load_state()
+    pick = pick_topic(load_topics(), state, slot, today_in(cfg))
     raw = write_post(pick, cfg, _recent_topics(state))
-    text = format_post(raw, pick.topic)
+    return pick, format_post(raw, pick.topic)
 
-    if dry_run:
-        return RunResult(status="dry-run", topic=pick.topic, text=text)
+
+def publish(cfg: Config, pick: Pick, slot: str, text: str, date: str = "") -> str:
+    """Send the text to LinkedIn and record what happened. Returns the post id.
+
+    State is reloaded here rather than passed in, because minutes can pass
+    between writing a draft and approving it.
+    """
+    today = date or today_in(cfg)
+    state = load_state()
 
     token = get_secret("LINKEDIN_ACCESS_TOKEN")
     if not token or not cfg.linkedin_member_id:
-        raise LinkedInAuthError("Not connected. Run: python -m agent linkedin connect")
+        raise LinkedInAuthError(NOT_CONNECTED)
 
     try:
         post_id = post_text(text, token, cfg.linkedin_member_id)
@@ -64,10 +75,33 @@ def run_once(cfg: Config, slot: str, dry_run: bool = False, force: bool = False)
 
     state.add(HistoryEntry(date=today, slot=slot, topic=pick.topic,
                            status="posted", post_id=post_id))
-    advance(state, pick)
+    advance(state, pick)          # only moves on for a fresh topic
+    save_state(state)
+    return post_id
+
+
+def record_skip(cfg: Config, pick: Pick, slot: str, date: str = "") -> None:
+    """Remember that this slot was deliberately passed over."""
+    state = load_state()
+    state.add(HistoryEntry(date=date or today_in(cfg), slot=slot, topic=pick.topic, status="skipped"))
     save_state(state)
 
+
+def run_once(cfg: Config, slot: str, dry_run: bool = False, force: bool = False) -> RunResult:
+    today = today_in(cfg)
+    state = load_state()
+
+    if state.already_handled(today, slot) and not force:
+        return RunResult(status="skipped", topic="", reason=f"{today} {slot} was already handled")
+
+    pick, text = compose(cfg, slot, state)
+
+    if dry_run:
+        return RunResult(status="dry-run", topic=pick.topic, text=text)
+
+    post_id = publish(cfg, pick, slot, text, today)
     return RunResult(status="posted", topic=pick.topic, text=text, post_id=post_id)
+
 
 def prepare_preview(cfg: Config, slot: str) -> RunResult:
     """Write a draft and open it as a GitHub Issue for review."""
@@ -77,9 +111,7 @@ def prepare_preview(cfg: Config, slot: str) -> RunResult:
     if preview.open_draft(today, slot) is not None:
         return RunResult(status="skipped", topic="", reason=f"a draft for {slot} is already open")
 
-    pick = pick_topic(load_topics(), state, slot, today)
-    raw = write_post(pick, cfg, _recent_topics(state))
-    text = format_post(raw, pick.topic)
+    pick, text = compose(cfg, slot, state)
 
     number = preview.create_draft(today, slot, pick.topic, text,
                                   cfg.preview_timeout_action, cfg.preview_minutes)
@@ -105,28 +137,16 @@ def decide_preview(cfg: Config, slot: str) -> RunResult:
     pick = pick_topic(load_topics(), state, slot, today)
 
     if decision == "cancel":
-        state.add(HistoryEntry(date=today, slot=slot, topic=pick.topic, status="skipped"))
-        save_state(state)
+        record_skip(cfg, pick, slot, today)
         preview.close_draft(draft.number, "Cancelled - nothing was published.")
         return RunResult(status="skipped", topic=pick.topic, reason="cancelled in the draft issue")
 
-    token = get_secret("LINKEDIN_ACCESS_TOKEN")
-    if not token or not cfg.linkedin_member_id:
-        raise LinkedInAuthError("Not connected. Run: python -m agent linkedin connect")
-
     try:
-        post_id = post_text(draft.text, token, cfg.linkedin_member_id)
+        post_id = publish(cfg, pick, slot, draft.text, today)
     except LinkedInError as exc:
-        state.add(HistoryEntry(date=today, slot=slot, topic=pick.topic,
-                               status="failed", error=str(exc)[:200]))
-        save_state(state)
         preview.close_draft(draft.number, f"Posting failed: {exc}")
         raise
 
-    state.add(HistoryEntry(date=today, slot=slot, topic=pick.topic,
-                           status="posted", post_id=post_id))
-    advance(state, pick)
-    save_state(state)
     preview.close_draft(draft.number, f"Published: {post_id}")
 
     return RunResult(status="posted", topic=pick.topic, text=draft.text, post_id=post_id)

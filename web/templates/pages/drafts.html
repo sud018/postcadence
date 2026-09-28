@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Drafts · PostCadence{% endblock %}
+{% block content %}
+
+<section class="hero rise" style="padding:28px 32px;">
+  <div class="hero-inner">
+    <div>
+      <div class="eyebrow">Drafts</div>
+      <h1 style="font-size:30px; margin-top:6px;">Read it before LinkedIn does</h1>
+      <p style="color:var(--muted); margin:8px 0 0; max-width:52ch;">
+        Write a post now, edit it, then publish it yourself. Nothing here waits for the clock —
+        approving a draft posts it straight away.
+      </p>
+    </div>
+
+    <form method="post" action="/drafts/new" class="newdraft">
+      {% if slots|length > 1 %}
+        <select class="input" name="slot">
+          {% for s in slots %}<option value="{{ s }}">for {{ s }}</option>{% endfor %}
+        </select>
+      {% else %}
+        <input type="hidden" name="slot" value="{{ slots[0] if slots else '09:00' }}">
+      {% endif %}
+      <button class="btn" type="submit" data-busy="Writing…">✍️ Write a draft</button>
+    </form>
+  </div>
+</section>
+
+{% if error %}<div class="flash flash-bad rise" style="margin:0 0 20px;">{{ error }}</div>{% endif %}
+{% if saved %}<div class="flash flash-ok rise" style="margin:0 0 20px;">Saved.</div>{% endif %}
+{% if skipped %}<div class="flash flash-ok rise" style="margin:0 0 20px;">Slot skipped — nothing will post for it today.</div>{% endif %}
+{% if posted %}
+  <div class="flash flash-ok rise" style="margin:0 0 20px;">
+    Published. <a class="link" href="{{ post_url }}" target="_blank" rel="noopener">Open it on LinkedIn →</a>
+  </div>
+{% endif %}
+
+{% if not connected %}
+  <div class="flash flash-warn rise" style="margin:0 0 20px;">
+    LinkedIn is not connected, so posting is switched off.
+    <a class="link" href="/setup/linkedin">Connect it →</a>
+  </div>
+{% endif %}
+
+{% if drafts %}
+  <div class="stack-lg rise">
+    {% for d in drafts %}
+      {% include "partials/draft_card.html" %}
+    {% endfor %}
+  </div>
+{% else %}
+  <section class="card card-pad rise" style="text-align:center; padding:56px 24px;">
+    <div style="font-size:40px;">📝</div>
+    <h2 style="font-size:20px; margin-top:12px;">No drafts yet</h2>
+    <p style="color:var(--muted); margin:8px 0 0;">
+      Press <b>Write a draft</b> and your model will write the next topic in the queue.
+      The queue only moves forward once a post actually goes out.
+    </p>
+  </section>
+{% endif %}
+
+<script src="/static/js/drafts.js" defer></script>
+{% endblock %}
