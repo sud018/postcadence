@@ -1,6 +1,9 @@
-# PostCadence
+<p align="center">
+  <img src="web/static/img/logo.png" width="88" alt="">
+</p>
 
-*Your ideas, posted on schedule.*
+<h1 align="center">PostCadence</h1>
+<p align="center"><em>Your ideas, posted on schedule.</em></p>
 
 Give it a list of topics. A language model of your choice writes a LinkedIn post
 for each one, and PostCadence publishes them at the times you pick, with your

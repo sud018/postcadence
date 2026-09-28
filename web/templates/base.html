@@ -4,7 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}PostCadence{% endblock %}</title>
-  <link rel="icon" href="/static/img/logo.png">
+  <link rel="icon" href="/static/img/logo.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="/static/img/favicon.ico" sizes="48x48">
+  <link rel="apple-touch-icon" href="/static/img/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/static/css/app.css">
@@ -16,7 +18,17 @@
 
   <header class="topbar">
     <a class="brand" href="/">
-      <div class="brand-mark">🕒</div>
+      <div class="brand-mark">
+        {# The dial keeps coming round, the dot is the moment a post goes out,
+           the two bars are the posts stacking up. Inline so it inherits colour. #}
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M32 15.5 a16.5 16.5 0 1 1 -14.5 8.6" fill="none" stroke="currentColor"
+                stroke-width="3.6" stroke-linecap="round" opacity=".45"/>
+          <circle cx="32" cy="15.5" r="4.6" fill="currentColor"/>
+          <rect x="25.5" y="30" width="6" height="12" rx="3" fill="currentColor"/>
+          <rect x="34.5" y="25" width="6" height="17" rx="3" fill="currentColor"/>
+        </svg>
+      </div>
       <div>
         <div class="brand-name">PostCadence</div>
         <div class="brand-tag">Your ideas, posted on schedule.</div>

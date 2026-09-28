@@ -35,9 +35,12 @@ h1,h2,h3 { color:var(--white); margin:0; letter-spacing:-.02em; }
 .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:36px; gap:16px; flex-wrap:wrap; }
 .brand { display:flex; align-items:center; gap:12px; }
 .brand-mark {
-  height:42px; width:42px; border-radius:14px; display:grid; place-items:center; font-size:20px;
+  height:42px; width:42px; border-radius:14px; display:grid; place-items:center; color:#fff;
   background:linear-gradient(135deg,var(--brand-500),var(--teal-500)); box-shadow:var(--glow);
+  transition:transform .18s;
 }
+.brand-mark svg { width:26px; height:26px; }
+.brand:hover .brand-mark { transform:translateY(-1px) rotate(-4deg); }
 .brand-name { font-weight:600; color:var(--white); line-height:1.2; }
 .brand-tag { font-size:12px; color:var(--muted); }
 
