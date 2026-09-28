@@ -13,5 +13,7 @@
   "tone": "professional",
   "author_context": "",
   "linkedin_member_id": "gO0v4mD6yc",
-  "linkedin_token_expires": "2026-11-25"
+  "linkedin_token_expires": "2026-11-25",
+  "github_client_id": "",
+  "github_repo": "sud018/linkedin-agent"
 }
