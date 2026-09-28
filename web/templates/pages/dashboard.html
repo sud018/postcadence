@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="hero rise">
+  <div class="hero-inner">
+    <div>
+      <div class="eyebrow">Next post</div>
+      <div class="hero-time">{{ d.next_slot }}</div>
+      <div class="hero-when">{{ d.next_at.strftime('%A %d %B') }} · <b>{{ d.countdown }}</b></div>
+      <div class="chips">
+        <span class="chip {{ 'chip-amber' if d.cfg.mode == 'preview' else 'chip-teal' }}">
+          {{ 'Review before posting' if d.cfg.mode == 'preview' else 'Posts automatically' }}
+        </span>
+        <span class="chip">{{ d.cfg.timezone }}</span>
+        <span class="chip">{{ d.cfg.llm_model or 'gpt-4o-mini' }}</span>
+      </div>
+    </div>
+    <button class="btn" disabled title="Coming on day 5">Post now</button>
+  </div>
+</section>
+
+<section class="grid grid-4 rise">
+  {% macro stat(label, value, sub) %}
+    <div class="card stat">
+      <div class="stat-label">{{ label }}</div>
+      <div class="stat-value">{{ value }}</div>
+      <div class="stat-sub">{{ sub }}</div>
+    </div>
+  {% endmacro %}
+
+  {{ stat('Published', d.posted, 'posts so far') }}
+  {{ stat('Success rate', d.success_rate ~ '%', d.failed ~ ' failed') }}
+  {{ stat('Topics queued', d.topics_left, d.days_of_content ~ ' days of content') }}
+  {{ stat('Token', (d.token_days ~ ' days') if d.token_days is not none else '—', 'until LinkedIn re-auth') }}
+</section>
+
+<section class="grid grid-3 rise">
+  <div class="card card-pad">
+    <div class="card-head" style="padding:0 0 16px; border:0;">
+      <h2>Content runway</h2>
+      <a class="link" href="/topics">Manage topics →</a>
+    </div>
+
+    {% set total = d.topics|length %}
+    {% set used = total - d.topics_left %}
+    {% set pct = ((100 * used / total)|round|int) if total else 0 %}
+    <div class="bar"><span style="width: {{ pct }}%"></span></div>
+    <div class="bar-legend">
+      <span>{{ used }} used</span>
+      <span>{{ d.topics_left }} left of {{ total }}</span>
+    </div>
+
+    {% if d.topics_left <= 3 %}
+      <div class="note">Running low. Once these are used, posts repeat earlier topics with a fresh angle.</div>
+    {% endif %}
+  </div>
+
+  <div class="card card-pad">
+    <h2 style="margin-bottom:16px;">LinkedIn token</h2>
+    {% set td = d.token_days if d.token_days is not none else 0 %}
+    <div class="bar {{ 'warn' if td <= 14 }}"><span style="width: {{ ((td / 60 * 100)|round|int) if td > 0 else 0 }}%"></span></div>
+    <p class="stat-sub" style="margin-top:12px; font-size:14px;">
+      {% if d.token_days is none %}Not connected yet.
+      {% elif td <= 14 %}Expires soon — reconnect from Settings.
+      {% else %}Valid until {{ d.cfg.linkedin_token_expires }}.{% endif %}
+    </p>
+  </div>
+</section>
+
+<section class="card rise" style="overflow:hidden;">
+  <div class="card-head">
+    <h2>Recent posts</h2>
+    <a class="link" href="/history">Full history →</a>
+  </div>
+
+  {% if not d.recent %}
+    <div class="empty">
+      <div class="empty-icon">📭</div>
+      Nothing published yet. Your first post goes out at {{ d.next_slot }}.
+    </div>
+  {% else %}
+    <table class="rows">
+      <tbody>
+      {% for e in d.recent %}
+        <tr>
+          <td>{{ e.date }}</td>
+          <td style="color:var(--dim);">{{ e.slot }}</td>
+          <td class="topic">{{ e.topic }}</td>
+          <td>
+            <span class="chip {% if e.status == 'posted' %}chip-teal{% elif e.status == 'failed' %}chip-rose{% endif %}">
+              {{ e.status }}
+            </span>
+          </td>
+          <td>
+            {% set url = link_for(e) %}
+            {% if url %}<a class="link" href="{{ url }}" target="_blank" rel="noopener">View ↗</a>
+            {% else %}<span style="color:var(--dim); font-size:12px;">{{ e.error[:40] }}</span>{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</section>
+
+{% endblock %}

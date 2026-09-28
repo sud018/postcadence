@@ -3,9 +3,9 @@ name: Post to LinkedIn
 on:
   schedule:
     - cron: "30 15 * * *"
-    - cron: "00 16 * * *"
+    - cron: "0 16 * * *"
     - cron: "30 16 * * *"
-    - cron: "00 17 * * *"
+    - cron: "0 17 * * *"
 
   workflow_dispatch:
     inputs:

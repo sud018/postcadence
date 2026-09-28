@@ -1,0 +1,2 @@
+[console_scripts]
+postcadence = agent.cli:main

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}PostCadence{% endblock %}</title>
+  <link rel="icon" href="/static/img/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script src="/static/js/htmx.min.js" defer></script>
+</head>
+<body>
+<div class="shell">
+
+  <header class="topbar">
+    <a class="brand" href="/">
+      <div class="brand-mark">🕒</div>
+      <div>
+        <div class="brand-name">PostCadence</div>
+        <div class="brand-tag">Your ideas, posted on schedule.</div>
+      </div>
+    </a>
+
+    <nav class="nav">
+      {% for href, label in [('/', 'Dashboard'), ('/topics', 'Topics'), ('/settings', 'Settings'), ('/history', 'History')] %}
+        <a href="{{ href }}" class="{{ 'is-active' if request.url.path == href }}">{{ label }}</a>
+      {% endfor %}
+    </nav>
+  </header>
+
+  {% block content %}{% endblock %}
+
+  <footer class="foot">
+    <span>Running locally · nothing leaves this machine except your posts</span>
+    <span>v{{ request.app.version }}</span>
+  </footer>
+</div>
+</body>
+</html>

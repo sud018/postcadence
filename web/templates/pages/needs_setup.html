@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero rise" style="text-align:center; padding:64px 32px;">
+  <div class="hero-inner" style="justify-content:center;">
+    <div>
+      <div style="font-size:44px; margin-bottom:12px;">👋</div>
+      <h1 style="font-size:28px; margin-bottom:8px;">Let's set things up</h1>
+      <p style="color:var(--muted); margin:0 0 24px;">{{ error }}</p>
+      <a class="btn" href="/setup">Start setup</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
