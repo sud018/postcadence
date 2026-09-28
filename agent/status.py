@@ -49,3 +49,24 @@ def recent(state: State, limit: int = 5) -> list[HistoryEntry]:
 
 def post_link(entry: HistoryEntry) -> str:
     return POST_URL.format(urn=entry.post_id) if entry.post_id else ""
+
+def posted_dates(state: State) -> set[str]:
+    """Every local date that has at least one published post."""
+    return {entry.date for entry in state.history if entry.status == "posted"}
+
+
+def streak(state: State, today: str) -> int:
+    """Consecutive days ending today - or yesterday, since today may not be over."""
+    dates = posted_dates(state)
+    if not dates:
+        return 0
+
+    day = date.fromisoformat(today)
+    if day.isoformat() not in dates:
+        day -= timedelta(days=1)          # today has not posted yet; that is fine
+
+    count = 0
+    while day.isoformat() in dates:
+        count += 1
+        day -= timedelta(days=1)
+    return count

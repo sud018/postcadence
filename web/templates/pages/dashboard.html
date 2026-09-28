@@ -19,7 +19,7 @@
   </div>
 </section>
 
-<section class="grid grid-4 rise">
+<section class="grid grid-auto rise">
   {% macro stat(label, value, sub) %}
     <div class="card stat">
       <div class="stat-label">{{ label }}</div>
@@ -32,6 +32,7 @@
   {{ stat('Success rate', d.success_rate ~ '%', d.failed ~ ' failed') }}
   {{ stat('Topics queued', d.topics_left, d.days_of_content ~ ' days of content') }}
   {{ stat('Token', (d.token_days ~ ' days') if d.token_days is not none else '—', 'until LinkedIn re-auth') }}
+  {{ stat('Streak', d.streak ~ (' day' if d.streak == 1 else ' days'), 'in a row') }}
 </section>
 
 <section class="grid grid-3 rise">

@@ -3,7 +3,7 @@ from zoneinfo import ZoneInfo
 
 from agent.config import Config
 from agent.state import HistoryEntry, State
-from agent.status import counts, next_run, post_link, recent, token_days, until
+from agent.status import counts, next_run, post_link, recent, streak, token_days, until
 
 TZ = ZoneInfo("America/Los_Angeles")
 
@@ -58,3 +58,50 @@ def test_post_link_only_when_there_is_an_id():
     posted = HistoryEntry(date="d", slot="s", topic="t", status="posted", post_id="urn:li:share:9")
     assert post_link(posted).endswith("urn:li:share:9/")
     assert post_link(HistoryEntry(date="d", slot="s", topic="t", status="failed")) == ""
+
+
+def entry(date_str, slot="09:00", status="posted"):
+    return HistoryEntry(date=date_str, slot=slot, topic="t", status=status)
+
+
+def state_with(*dates, status="posted"):
+    state = State()
+    for d in dates:
+        state.add(entry(d, status=status))
+    return state
+
+
+def test_streak_is_zero_with_no_history():
+    assert streak(State(), "2026-09-27") == 0
+
+
+def test_streak_counts_consecutive_days():
+    state = state_with("2026-09-25", "2026-09-26", "2026-09-27")
+    assert streak(state, "2026-09-27") == 3
+
+
+def test_streak_stops_at_a_gap():
+    state = state_with("2026-09-23", "2026-09-25", "2026-09-26", "2026-09-27")
+    assert streak(state, "2026-09-27") == 3
+
+
+def test_streak_survives_a_day_that_has_not_posted_yet():
+    state = state_with("2026-09-25", "2026-09-26")
+    assert streak(state, "2026-09-27") == 2
+
+
+def test_streak_breaks_after_two_missed_days():
+    state = state_with("2026-09-24", "2026-09-25")
+    assert streak(state, "2026-09-27") == 0
+
+
+def test_streak_ignores_failed_posts():
+    state = state_with("2026-09-26", "2026-09-27", status="failed")
+    assert streak(state, "2026-09-27") == 0
+
+
+def test_two_slots_on_one_day_count_once():
+    state = State()
+    state.add(entry("2026-09-27", "09:00"))
+    state.add(entry("2026-09-27", "17:30"))
+    assert streak(state, "2026-09-27") == 1

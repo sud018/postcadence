@@ -7,12 +7,13 @@ from agent import paths
 from agent.jsonio import read_json, write_json
 
 
-def load_topics(path: Path = paths.TOPICS_FILE) -> list[str]:
+def load_topics(path: Path | None = None) -> list[str]:
+    path = path or paths.TOPICS_FILE
     if not path.exists():
         return []
     data = read_json(path)
     return list(data.get("topics", []))
 
 
-def save_topics(topics: list[str], path: Path = paths.TOPICS_FILE) -> None:
-    write_json(path, {"topics": topics})
+def save_topics(topics: list[str], path: Path | None = None) -> None:
+    write_json(path or paths.TOPICS_FILE, {"topics": topics})

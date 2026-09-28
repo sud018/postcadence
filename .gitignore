@@ -18,3 +18,5 @@ data/.*.tmp
 .vscode/
 .idea/
 Thumbs.db
+
+.ruff_cache/

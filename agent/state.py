@@ -13,11 +13,11 @@ STATUSES = ("posted", "failed", "skipped", "pending_preview")
 
 @dataclass
 class HistoryEntry:
-    date: str
-    slot: str
+    date: str          # local date, "YYYY-MM-DD"
+    slot: str          # scheduled time, "HH:MM"
     topic: str
     status: str
-    post_id: str = ""
+    post_id: str = ""  # LinkedIn post URN once published
     error: str = ""
     created_at: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -53,9 +53,10 @@ class State:
         )
 
 
-def load_state(path: Path = paths.STATE_FILE) -> State:
+def load_state(path: Path | None = None) -> State:
+    path = path or paths.STATE_FILE
     return State.from_dict(read_json(path)) if path.exists() else State()
 
 
-def save_state(state: State, path: Path = paths.STATE_FILE) -> None:
-    write_json(path, state.to_dict())
+def save_state(state: State, path: Path | None = None) -> None:
+    write_json(path or paths.STATE_FILE, state.to_dict())

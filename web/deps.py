@@ -7,7 +7,7 @@ from datetime import datetime
 from agent.config import Config, load_config
 from agent.schedule import local_now
 from agent.state import State, load_state
-from agent.status import counts, next_run, post_link, recent, token_days, until
+from agent.status import counts, next_run, post_link, recent, streak, token_days, until
 from agent.topics import load_topics
 
 
@@ -25,6 +25,7 @@ class Snapshot:
     topics_left: int
     days_of_content: float
     token_days: int | None
+    streak: int
     tally: dict[str, int]
     recent: list
 
@@ -61,6 +62,7 @@ def snapshot() -> Snapshot:
         topics_left=left,
         days_of_content=round(left / max(1, cfg.posts_per_day), 1),
         token_days=token_days(cfg),
+        streak=streak(state, now.date().isoformat()),
         tally=counts(state),
         recent=recent(state, limit=8),
     )

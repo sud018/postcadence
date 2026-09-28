@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Topics · PostCadence{% endblock %}
+{% block content %}
+
+<section class="hero rise" style="padding:28px 32px;">
+  <div class="hero-inner">
+    <div>
+      <div class="eyebrow">Topics</div>
+      <h1 style="font-size:30px; margin-top:6px;">What the agent writes about</h1>
+      <p style="color:var(--muted); margin:8px 0 0;">
+        Posts work down this list in order. When it runs out, earlier topics come back with a fresh angle.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="card card-pad rise" style="margin-bottom:20px;">
+  <form id="add-form" class="addbar">
+    <input id="add-input" name="text" class="input" autocomplete="off"
+           placeholder="Add a topic — or several, separated by ;">
+    <button class="btn" type="submit">Add</button>
+  </form>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file" hidden accept=".xlsx,.xlsm,.docx,.pdf,.csv,.txt,.md">
+    <span>Drop a file here, or <u>browse</u> — Excel, Word, PDF, CSV or text</span>
+  </label>
+</section>
+
+<section class="card rise" style="overflow:hidden;">
+  <div class="card-head">
+    <h2>Your queue</h2>
+    <span style="font-size:13px; color:var(--dim);">Reorder with ↑ ↓ · click a topic to rename</span>
+  </div>
+  <div id="table" class="tablewrap">
+    {% include "partials/topic_table.html" %}
+  </div>
+</section>
+
+<script src="/static/js/topics.js" defer></script>
+{% endblock %}

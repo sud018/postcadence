@@ -1,0 +1,38 @@
+{% if message %}<div class="flash flash-ok">{{ message }}</div>{% endif %}
+{% if error %}<div class="flash flash-bad">{{ error }}</div>{% endif %}
+
+<div class="tcount">
+  <span class="chip chip-teal">{{ queued }} queued</span>
+  <span class="chip">{{ bookmark }} used</span>
+  <span class="chip">{{ topics|length }} total</span>
+</div>
+
+{% if not topics %}
+  <div class="empty">
+    <div class="empty-icon">🗒️</div>
+    No topics yet. Add one above, or drop a spreadsheet anywhere on this page.
+  </div>
+{% else %}
+<table class="rows tlist">
+  <tbody>
+  {% for topic in topics %}
+    {% set used = loop.index0 < bookmark %}
+    <tr class="{{ 'is-used' if used }}">
+      <td class="tpos">{{ loop.index }}</td>
+      <td class="topic">
+        <span class="ttext" data-index="{{ loop.index0 }}">{{ topic }}</span>
+      </td>
+      <td><span class="chip {{ 'chip-teal' if not used }}">{{ 'used' if used else 'queued' }}</span></td>
+      <td class="tactions">
+        <button class="icon" data-act="move" data-index="{{ loop.index0 }}" data-delta="-1"
+                {% if loop.first %}disabled{% endif %} title="Move up">↑</button>
+        <button class="icon" data-act="move" data-index="{{ loop.index0 }}" data-delta="1"
+                {% if loop.last %}disabled{% endif %} title="Move down">↓</button>
+        <button class="icon icon-bad" data-act="delete" data-index="{{ loop.index0 }}"
+                title="Delete">✕</button>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}

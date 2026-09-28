@@ -11,8 +11,8 @@ from agent.jsonio import read_json, write_json
 
 PROVIDERS = ("openai", "anthropic", "gemini", "ollama")
 MODES = ("auto", "preview")
-TONES = ("professional", "causual", "storytelling")
 TIMEOUT_ACTIONS = ("post", "skip")
+TONES = ("professional", "casual", "storytelling")
 MAX_POSTS_PER_DAY = 5
 _TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
@@ -29,12 +29,13 @@ class Config:
     posts_per_day: int = 1
     post_times: list[str] = field(default_factory=lambda: ["09:00"])
     mode: str = "auto"
-    tone: str = "professional"
     preview_minutes: int = 30
     preview_timeout_action: str = "post"
+    catch_up_hours: int = 6
+    tone: str = "professional"
+    author_context: str = ""
     linkedin_member_id: str = ""
     linkedin_token_expires: str = ""
-    catch_up_hours: int = 6
 
     def validate(self) -> None:
         errors: list[str] = []
@@ -60,16 +61,17 @@ class Config:
 
         if self.mode not in MODES:
             errors.append(f"mode must be one of {MODES}")
+        if self.tone not in TONES:
+            errors.append(f"tone must be one of {TONES}")
+        if not 1 <= self.catch_up_hours <= 24:
+            errors.append("catch_up_hours must be 1-24")
         if not 5 <= self.preview_minutes <= 240:
             errors.append("preview_minutes must be 5-240")
         if self.preview_timeout_action not in TIMEOUT_ACTIONS:
             errors.append(f"preview_timeout_action must be one of {TIMEOUT_ACTIONS}")
-        if self.tone not in TONES:
-            errors.append(f"tone must be one of {TONES}")
+
         if errors:
             raise ConfigError("Invalid config:\n  - " + "\n  - ".join(errors))
-        if not 1 <= self.catch_up_hours <= 24:
-            errors.append("catch_up_hours must be 1-24")
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -82,7 +84,8 @@ class Config:
         return cfg
 
 
-def load_config(path: Path = paths.CONFIG_FILE) -> Config:
+def load_config(path: Path | None = None) -> Config:
+    path = path or paths.CONFIG_FILE
     if not path.exists():
         raise FileNotFoundError(f"No config at {path}. Run: python -m agent init")
     cfg = Config.from_dict(read_json(path))
@@ -90,7 +93,7 @@ def load_config(path: Path = paths.CONFIG_FILE) -> Config:
     return cfg
 
 
-def save_config(cfg: Config, path: Path = paths.CONFIG_FILE) -> None:
+def save_config(cfg: Config, path: Path | None = None) -> None:
     cfg.post_times = sorted(cfg.post_times)
     cfg.validate()
-    write_json(path, cfg.to_dict())
+    write_json(path or paths.CONFIG_FILE, cfg.to_dict())
