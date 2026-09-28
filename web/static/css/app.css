@@ -171,3 +171,21 @@ h1,h2,h3 { color:var(--white); margin:0; letter-spacing:-.02em; }
 .flash { margin:16px 24px 0; padding:11px 16px; border-radius:12px; font-size:14px; }
 .flash-ok  { background:rgba(20,184,166,.12); border:1px solid rgba(20,184,166,.30); color:var(--teal-400); }
 .flash-bad { background:rgba(251,113,133,.12); border:1px solid rgba(251,113,133,.30); color:var(--rose); }
+
+/* setup wizard ------------------------------------------------------------- */
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; }
+.pcard {
+  padding:18px; border-radius:16px; cursor:pointer; text-align:center;
+  background:var(--ink-900); border:1.5px solid var(--ink-700); transition:.18s;
+}
+.pcard:hover { border-color:var(--ink-600); transform:translateY(-2px); }
+.pcard.is-on { border-color:var(--brand-500); background:rgba(99,102,241,.10);
+               box-shadow:0 0 0 3px rgba(99,102,241,.14); }
+.pcard-icon { font-size:26px; }
+.pcard-name { margin-top:8px; font-weight:600; color:var(--white); }
+.pcard-note { margin-top:2px; font-size:12px; color:var(--muted); }
+
+.keyrow { display:flex; gap:12px; margin-top:18px; }
+.hint { margin:10px 2px 0; font-size:13px; color:var(--dim); }
+.hint code { background:var(--ink-900); padding:2px 6px; border-radius:6px; color:var(--muted); }
+select.input { appearance:none; cursor:pointer; }

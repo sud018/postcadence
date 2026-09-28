@@ -1,0 +1,17 @@
+{% if error %}
+  <div class="flash flash-bad" style="margin:18px 0 0;">{{ error }}</div>
+{% else %}
+  <div class="flash flash-ok" style="margin:18px 0 0;">
+    Key works — the model replied “{{ reply }}”.
+  </div>
+
+  <form id="model-form" class="keyrow" style="margin-top:16px;">
+    <select class="input" name="model" id="model-select">
+      {% for m in models %}
+        <option value="{{ m }}" {% if m == chosen %}selected{% endif %}>{{ m }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn" type="submit">Use this model</button>
+  </form>
+  <p class="hint">{{ models|length }} model{{ 's' if models|length != 1 }} available to this key.</p>
+{% endif %}

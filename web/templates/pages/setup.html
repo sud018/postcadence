@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Setup · PostCadence{% endblock %}
+{% block content %}
+
+<section class="hero rise" style="padding:28px 32px;">
+  <div class="hero-inner">
+    <div>
+      <div class="eyebrow">Setup · step 1 of 5</div>
+      <h1 style="font-size:30px; margin-top:6px;">Which model writes your posts?</h1>
+      <p style="color:var(--muted); margin:8px 0 0;">
+        Your key is checked with a real call, then stored in Windows Credential Manager — never in a file.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="card card-pad rise" style="margin-bottom:20px;">
+  <form id="provider-form">
+    <div class="cards">
+      {% for p in providers %}
+        <label class="pcard {{ 'is-on' if p.id == selected }}">
+          <input type="radio" name="provider" value="{{ p.id }}" hidden
+                 {% if p.id == selected %}checked{% endif %}>
+          <div class="pcard-icon">{{ p.icon }}</div>
+          <div class="pcard-name">{{ p.name }}</div>
+          <div class="pcard-note">{{ p.note }}</div>
+        </label>
+      {% endfor %}
+    </div>
+
+    <div class="keyrow">
+      <input class="input" type="password" name="api_key" id="api-key" autocomplete="off"
+             placeholder="{{ 'Key already stored — paste a new one to replace it' if key_set else 'Paste your API key' }}">
+      <button class="btn" type="submit">Check key</button>
+    </div>
+    <p class="hint" id="key-hint">
+      {% if masked %}Stored: <code>{{ masked }}</code> · {% endif %}
+      <span id="where">{{ providers | selectattr('id', 'equalto', selected) | map(attribute='help') | first }}</span>
+    </p>
+  </form>
+
+  <div id="result"></div>
+</section>
+
+<section class="card card-pad rise">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <h2 style="font-size:18px;">Next: connect LinkedIn</h2>
+      <p style="color:var(--muted); margin:6px 0 0; font-size:14px;">Available on day 4.</p>
+    </div>
+    <button class="btn btn-ghost" disabled>Continue →</button>
+  </div>
+</section>
+
+<script src="/static/js/setup.js" defer></script>
+{% endblock %}

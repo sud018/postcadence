@@ -29,5 +29,9 @@ class LLMProvider(ABC):
         reply = self.generate("Reply with the single word: ready", max_tokens=10)
         return reply.strip()
 
+    def models(self) -> list[str]:
+        """Model ids this key can use. Providers override; the default is honest about knowing one."""
+        return [self.default_model] if self.default_model else []
+
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} model={self.model!r}>"
