@@ -1,7 +1,8 @@
 [project]
 name = "postcadence"
-version = "0.1.0"
+dynamic = ["version"]            # read from agent/__init__.py - one place to bump it
 description = "Writes and publishes your LinkedIn posts on a schedule."
+readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "keyring>=25",
@@ -24,7 +25,8 @@ dependencies = [
 dev = ["pytest>=8", "ruff>=0.6", "httpx>=0.27"]
 
 [project.scripts]
-postcadence = "agent.cli:main"
+postcadence = "agent.cli:main"          # the command-line agent
+postcadence-web = "web.__main__:main"   # the local app in your browser
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -32,6 +34,15 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["agent", "agent.cli", "agent.github", "agent.llm", "agent.linkedin", "agent.topics", "web", "web.routers"]
+
+# Templates, CSS and JS are not Python, so setuptools leaves them out unless told.
+# Without this, "pip install ." gives an app with no pages.
+[tool.setuptools.package-data]
+web = ["templates/*.html", "templates/pages/*.html", "templates/partials/*.html",
+       "static/css/*", "static/js/*", "static/img/*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "agent.__version__"}
 
 [tool.ruff]
 line-length = 110

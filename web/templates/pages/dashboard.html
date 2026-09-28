@@ -41,6 +41,8 @@
   {{ stat('Streak', d.streak ~ (' day' if d.streak == 1 else ' days'), 'in a row') }}
 </section>
 
+{% include "partials/charts.html" %}
+
 <section class="grid grid-3 rise">
   <div class="card card-pad">
     <div class="card-head" style="padding:0 0 16px; border:0;">
@@ -110,4 +112,5 @@
   {% endif %}
 </section>
 
+<script src="/static/js/charts.js" defer></script>
 {% endblock %}

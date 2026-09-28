@@ -1,0 +1,14 @@
+# Store every text file with LF endings, whatever the editor on this machine does.
+# Windows editors like to write CRLF; without this, git shows files as "modified"
+# when only their line endings changed.
+* text=auto eol=lf
+
+# cmd.exe needs CRLF in batch files, so these are the one exception.
+*.bat text eol=crlf
+
+# Never touch these - they are not text.
+*.png binary
+*.jpg binary
+*.xlsx binary
+*.docx binary
+*.pdf binary

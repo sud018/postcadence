@@ -4,11 +4,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from agent import analytics
 from agent.config import Config, load_config
 from agent.schedule import local_now
 from agent.state import State, load_state
 from agent.status import counts, next_run, post_link, recent, streak, token_days, until
 from agent.topics import load_topics
+from web import charts
 
 
 @dataclass
@@ -28,6 +30,9 @@ class Snapshot:
     streak: int
     tally: dict[str, int]
     recent: list
+    activity: dict          # 30-day column chart geometry
+    window: dict[str, int]  # totals for the same 30 days
+    slots: list[dict]       # published posts per time slot
 
     @property
     def posted(self) -> int:
@@ -50,6 +55,7 @@ def snapshot() -> Snapshot:
     now = local_now(cfg)
     slot, at = next_run(cfg, now)
     left = max(0, len(topics) - state.next_topic_index)
+    days = analytics.daily(state, now.date().isoformat(), days=30)
 
     return Snapshot(
         cfg=cfg,
@@ -65,6 +71,9 @@ def snapshot() -> Snapshot:
         streak=streak(state, now.date().isoformat()),
         tally=counts(state),
         recent=recent(state, limit=8),
+        activity=charts.activity(days),
+        window=analytics.summary(days),
+        slots=charts.slot_bars(analytics.by_slot(state, cfg.post_times)),
     )
 
 

@@ -1,0 +1,86 @@
+{# Analytics: 30-day activity and posts per slot. Expects `d` (the Snapshot). #}
+{% set a = d.activity %}
+<section class="grid grid-3 rise">
+
+  <div class="card card-pad chart-card">
+    <div class="chart-head">
+      <div>
+        <h2>Last 30 days</h2>
+        <div class="chart-sub">
+          {{ d.window.posted }} published on {{ d.window.active_days }} day{{ '' if d.window.active_days == 1 else 's' }}
+          {% if d.window.failed %}· {{ d.window.failed }} failed{% endif %}
+          {% if d.window.skipped %}· {{ d.window.skipped }} skipped{% endif %}
+        </div>
+      </div>
+      {% if d.window.failed %}
+        <div class="chart-legend">
+          <span><i class="key-bar"></i>Published</span>
+          <span><i class="key-fail">✕</i>Failed attempt</span>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if a.empty %}
+      <div class="chart-empty">No posts in the last 30 days yet. The first one will show up here.</div>
+    {% else %}
+      <div class="chart-wrap">
+        <svg class="chart" viewBox="0 0 {{ a.width }} {{ a.height }}" role="img"
+             aria-label="Posts published per day over the last 30 days">
+          {% for t in a.ticks %}
+            <line class="grid-line" x1="{{ a.left }}" x2="{{ a.width }}" y1="{{ t.y }}" y2="{{ t.y }}"></line>
+            <text class="tick" x="{{ a.left - 8 }}" y="{{ t.y + 4 }}" text-anchor="end">{{ t.value }}</text>
+          {% endfor %}
+
+          {% for c in a.columns %}
+            <g class="col" tabindex="0" data-tip="{{ c.tip }}">
+              <rect class="hit" x="{{ c.hit_x }}" y="0" width="{{ a.slot }}" height="{{ a.height }}"></rect>
+              {% if c.path %}<path class="bar-mark" d="{{ c.path }}"></path>{% endif %}
+              {% if c.day.failed %}
+                <text class="fail-mark" x="{{ c.hit_x + a.slot / 2 }}" y="{{ a.fail_y }}" text-anchor="middle">✕</text>
+              {% endif %}
+            </g>
+          {% endfor %}
+
+          {% for l in a.labels %}
+            <text class="tick" x="{{ l.x }}" y="{{ a.label_y }}" text-anchor="middle">{{ l.text }}</text>
+          {% endfor %}
+        </svg>
+        <div class="chart-tip" hidden></div>
+      </div>
+
+      <details class="chart-table">
+        <summary>Show as table</summary>
+        <table class="rows">
+          <thead><tr><th>Day</th><th>Published</th><th>Failed</th><th>Skipped</th></tr></thead>
+          <tbody>
+            {% for c in a.columns|reverse if c.day.posted or c.day.failed or c.day.skipped %}
+              <tr><td>{{ c.day.label }}</td><td>{{ c.day.posted }}</td><td>{{ c.day.failed }}</td><td>{{ c.day.skipped }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
+    {% endif %}
+  </div>
+
+  <div class="card card-pad chart-card">
+    <div class="chart-head">
+      <div>
+        <h2>By time slot</h2>
+        <div class="chart-sub">All published posts, by the time they went out</div>
+      </div>
+    </div>
+
+    <div class="hbars">
+      {% for s in d.slots %}
+        <div class="hbar" title="{{ s.slot }}: {{ s.count }} published">
+          <span class="hbar-label">{{ s.slot }}{% if s.slot not in d.cfg.post_times %} <em>old</em>{% endif %}</span>
+          <span class="hbar-track"><span class="hbar-fill" style="width: {{ s.pct }}%"></span></span>
+          <span class="hbar-value">{{ s.count }}</span>
+        </div>
+      {% else %}
+        <div class="chart-empty">No time slots yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+</section>

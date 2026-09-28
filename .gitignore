@@ -23,3 +23,11 @@ Thumbs.db
 
 # Local drafts waiting for approval - yours only, not the scheduler's
 data/drafts.json
+
+# Build and packaging output
+build/
+dist/
+*.egg-info/
+
+# Files the Claude desktop app saves into this folder
+Claude outputs/
