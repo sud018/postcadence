@@ -7,6 +7,10 @@ on:
     - cron: "0 16 * * *"
     - cron: "30 16 * * *"
     - cron: "0 17 * * *"
+    - cron: "30 19 * * *"
+    - cron: "0 20 * * *"
+    - cron: "30 20 * * *"
+    - cron: "0 21 * * *"
 
   workflow_dispatch:
     inputs:
