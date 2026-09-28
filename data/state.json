@@ -1,5 +1,5 @@
 {
-  "next_topic_index": 4,
+  "next_topic_index": 5,
   "history": [
     {
       "date": "2026-09-20",
@@ -36,6 +36,15 @@
       "post_id": "urn:li:share:7510387855345479680",
       "error": "",
       "created_at": "2026-09-28T17:20:01+00:00"
+    },
+    {
+      "date": "2026-09-28",
+      "slot": "09:00",
+      "topic": "Reranking: the cheapest way to improve RAG accuracy",
+      "status": "posted",
+      "post_id": "urn:li:share:7510414078482288641",
+      "error": "",
+      "created_at": "2026-09-28T19:04:13+00:00"
     }
   ]
 }
