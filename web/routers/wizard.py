@@ -5,8 +5,9 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
 
 from agent.config import PROVIDERS, load_config, save_config
-from agent.llm import KEY_NAMES, get_provider
+from agent.llm import KEY_NAMES, build
 from agent.llm.base import AuthError, LLMError
+from agent.llm.catalog import known_models
 from agent.secrets_store import get_secret, mask, set_secret
 from web.app import templates
 
@@ -17,7 +18,7 @@ PROVIDER_CARDS = [
      "help": "platform.openai.com → API keys"},
     {"id": "anthropic", "name": "Anthropic", "note": "Claude models", "icon": "🟣",
      "help": "console.anthropic.com → API keys"},
-    {"id": "gemini", "name": "Google", "note": "Gemini models", "icon": "🔵",
+    {"id": "gemini", "name": "Gemini", "note": "Google models", "icon": "🔵",
      "help": "aistudio.google.com → Get API key"},
     {"id": "ollama", "name": "Ollama", "note": "Runs on this machine, free", "icon": "⚪",
      "help": "No key needed. Cloud posting will not work with this."},
@@ -74,16 +75,8 @@ def save_provider(request: Request, provider: str = Form(...), api_key: str = Fo
 
 def _probe(provider: str, api_key: str, model: str) -> dict:
     """One live call: does the key work, and what models can it use?"""
-    from agent.config import Config
-
-    trial = Config(llm_provider=provider, llm_model=model)
     try:
-        # build the provider directly so an unsaved key can be tested
-        if provider == "openai":
-            from agent.llm.openai_p import OpenAIProvider
-            worker = OpenAIProvider(api_key, model)
-        else:
-            worker = get_provider(trial)
+        worker = build(provider, api_key, model)   # unsaved key, on purpose
         return {"reply": worker.check(), "models": worker.models(), "error": ""}
     except AuthError as exc:
         return {"reply": "", "models": [], "error": str(exc)}
@@ -97,7 +90,7 @@ def _result(request: Request, reply: str = "", models: list[str] | None = None,
     return templates.TemplateResponse(
         request=request,
         name="partials/provider_result.html",
-        context={"reply": reply, "models": models or [], "error": error,
+        context={"reply": reply, "models": models or [], "error": error, "live": True,
                  "provider": provider or cfg.llm_provider, "chosen": cfg.llm_model},
     )
 
@@ -109,3 +102,16 @@ def save_model(request: Request, model: str = Form(...)) -> HTMLResponse:
     save_config(cfg)
     return templates.TemplateResponse(
         request=request, name="partials/model_saved.html", context={"model": cfg.llm_model})
+
+
+@router.get("/models", response_class=HTMLResponse)
+def models_for(request: Request, provider: str = "") -> HTMLResponse:
+    """The usual models for a provider, offered before any key is checked."""
+    cfg = load_config()
+    provider = provider or cfg.llm_provider
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/model_choices.html",
+        context={"models": known_models(provider), "chosen": cfg.llm_model,
+                 "provider": provider, "live": False},
+    )

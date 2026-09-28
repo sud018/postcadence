@@ -1,0 +1,17 @@
+{% if models %}
+<form id="model-form" class="keyrow" style="margin-top:16px;">
+  <select class="input" name="model" id="model-select">
+    {% for m in models %}
+      <option value="{{ m }}" {% if m == chosen %}selected{% endif %}>{{ m }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn {{ '' if live else 'btn-ghost' }}" type="submit">Use this model</button>
+</form>
+<p class="hint">
+  {% if live %}
+    {{ models|length }} model{{ 's' if models|length != 1 }} this key can use.
+  {% else %}
+    Common {{ provider }} models. Check your key to load the exact list for your account.
+  {% endif %}
+</p>
+{% endif %}

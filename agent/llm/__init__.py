@@ -22,8 +22,23 @@ def get_provider(cfg: Config) -> LLMProvider:
             f"No {key_name} stored. Run: python -m agent secret set {key_name}"
         )
 
+    return build(name, api_key, cfg.llm_model)
+
+
+def build(name: str, api_key: str | None, model: str = "") -> LLMProvider:
+    """Make a provider from a name - used by the factory and by the setup wizard,
+    which needs to test a key before it is saved anywhere."""
     if name == "openai":
         from agent.llm.openai_p import OpenAIProvider
-        return OpenAIProvider(api_key, cfg.llm_model)
+        return OpenAIProvider(api_key, model)
+    if name == "anthropic":
+        from agent.llm.anthropic_p import AnthropicProvider
+        return AnthropicProvider(api_key, model)
+    if name == "gemini":
+        from agent.llm.gemini_p import GeminiProvider
+        return GeminiProvider(api_key, model)
+    if name == "ollama":
+        from agent.llm.ollama_p import OllamaProvider
+        return OllamaProvider(api_key, model)
 
     raise LLMError(f"Provider {name!r} is not implemented yet")

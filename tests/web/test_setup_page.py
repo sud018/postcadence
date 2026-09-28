@@ -62,3 +62,20 @@ def test_choosing_a_model_saves_it():
     response = client.post("/setup/model", data={"model": "gpt-4o"})
     assert "gpt-4o" in response.text
     assert load_config().llm_model == "gpt-4o"
+
+
+def test_models_route_offers_known_models_without_a_key():
+    body = client.get("/setup/models?provider=anthropic").text
+    assert "claude-sonnet-4-5" in body
+    assert "Check your key" in body
+
+
+def test_models_route_covers_every_provider():
+    for provider, expected in [("openai", "gpt-4o-mini"), ("gemini", "gemini-2.5-flash"),
+                               ("ollama", "llama3.1")]:
+        assert expected in client.get(f"/setup/models?provider={provider}").text
+
+
+def test_the_card_says_gemini_not_google():
+    body = client.get("/setup").text
+    assert "Gemini" in body and ">Google<" not in body

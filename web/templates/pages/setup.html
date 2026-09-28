@@ -18,7 +18,7 @@
   <form id="provider-form">
     <div class="cards">
       {% for p in providers %}
-        <label class="pcard {{ 'is-on' if p.id == selected }}">
+        <label class="pcard {{ 'is-on' if p.id == selected }}" data-provider="{{ p.id }}">
           <input type="radio" name="provider" value="{{ p.id }}" hidden
                  {% if p.id == selected %}checked{% endif %}>
           <div class="pcard-icon">{{ p.icon }}</div>
@@ -39,6 +39,7 @@
     </p>
   </form>
 
+  <div id="models"></div>
   <div id="result"></div>
 </section>
 
