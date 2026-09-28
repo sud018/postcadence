@@ -88,9 +88,17 @@ def page(request: Request, error: str = "", done: str = "") -> HTMLResponse:
 
 @router.post("/client")
 def save_client(client_id: str = Form(""), repo: str = Form("")) -> RedirectResponse:
-    cfg = dataclasses.replace(load_or_default(),
-                              github_client_id=client_id.strip(),
-                              github_repo=repo.strip())
+    """Save what was typed. A blank field means "leave it alone", never "erase it".
+
+    The repository field and the Client ID share one form, so clearing the
+    stored Client ID just by correcting the repo name would be a nasty surprise.
+    """
+    current = load_or_default()
+    cfg = dataclasses.replace(
+        current,
+        github_client_id=client_id.strip() or current.github_client_id,
+        github_repo=repo.strip() or current.github_repo,
+    )
     save_config(cfg)
     return _back(done="Saved.")
 

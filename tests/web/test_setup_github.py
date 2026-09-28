@@ -144,3 +144,15 @@ def test_nothing_to_send_says_so(monkeypatch):
 
 def test_state_json_is_never_pushed():
     assert all(path != "data/state.json" for path, _ in page.SYNCED)
+
+
+def test_a_blank_field_keeps_what_was_saved_before():
+    """Correcting the repo must not wipe the Client ID: they share one form."""
+    client.post("/setup/github/client",
+                data={"client_id": "Iv1.abc", "repo": "me/agent"}, follow_redirects=False)
+    client.post("/setup/github/client",
+                data={"client_id": "", "repo": "me/renamed"}, follow_redirects=False)
+
+    cfg = load_config()
+    assert cfg.github_client_id == "Iv1.abc"
+    assert cfg.github_repo == "me/renamed"
