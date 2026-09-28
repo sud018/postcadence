@@ -16,6 +16,7 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
     "jinja2>=3.1",
+    "pynacl>=1.5",
     "python-multipart>=0.0.9",
 ]
 
@@ -30,7 +31,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["agent", "agent.cli", "agent.llm", "agent.linkedin", "agent.topics", "web", "web.routers"]
+packages = ["agent", "agent.cli", "agent.github", "agent.llm", "agent.linkedin", "agent.topics", "web", "web.routers"]
 
 [tool.ruff]
 line-length = 110

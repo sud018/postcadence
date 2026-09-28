@@ -1,5 +1,5 @@
 {
-  "next_topic_index": 3,
+  "next_topic_index": 4,
   "history": [
     {
       "date": "2026-09-20",
@@ -27,6 +27,15 @@
       "post_id": "urn:li:share:7509080371381190657",
       "error": "",
       "created_at": "2026-09-25T02:44:33+00:00"
+    },
+    {
+      "date": "2026-09-28",
+      "slot": "09:00",
+      "topic": "Choosing a vector database: pgvector vs Pinecone vs Qdrant",
+      "status": "posted",
+      "post_id": "urn:li:share:7510387855345479680",
+      "error": "",
+      "created_at": "2026-09-28T17:20:01+00:00"
     }
   ]
 }

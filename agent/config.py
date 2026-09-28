@@ -36,6 +36,8 @@ class Config:
     author_context: str = ""
     linkedin_member_id: str = ""
     linkedin_token_expires: str = ""
+    github_client_id: str = ""   # your own OAuth app - not a secret
+    github_repo: str = ""        # "owner/repo" the workflow lives in
 
     def validate(self) -> None:
         errors: list[str] = []

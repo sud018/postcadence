@@ -13,6 +13,7 @@ STEPS = [
     ("linkedin", "LinkedIn", "/setup/linkedin"),
     ("schedule", "Schedule", "/setup/schedule"),
     ("topics", "Topics", "/topics"),
+    ("github", "GitHub", "/setup/github"),
 ]
 
 
@@ -27,6 +28,7 @@ def completed() -> dict[str, bool]:
         "linkedin": bool(cfg.linkedin_member_id and get_secret("LINKEDIN_ACCESS_TOKEN")),
         "schedule": in_step,
         "topics": bool(load_topics()),
+        "github": bool(cfg.github_repo and get_secret("GITHUB_TOKEN")),
     }
 
 

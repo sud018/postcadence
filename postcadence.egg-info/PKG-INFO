@@ -15,6 +15,7 @@ Requires-Dist: pdfplumber>=0.11
 Requires-Dist: fastapi>=0.115
 Requires-Dist: uvicorn[standard]>=0.30
 Requires-Dist: jinja2>=3.1
+Requires-Dist: pynacl>=1.5
 Requires-Dist: python-multipart>=0.0.9
 Provides-Extra: dev
 Requires-Dist: pytest>=8; extra == "dev"

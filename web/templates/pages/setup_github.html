@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}GitHub · PostCadence{% endblock %}
+{% block content %}
+
+{% include "partials/stepper.html" %}
+
+<section class="hero rise" style="padding:28px 32px;">
+  <div class="hero-inner">
+    <div>
+      <div class="eyebrow">Setup · the robot that never sleeps</div>
+      <h1 style="font-size:30px; margin-top:6px;">Let GitHub run it for you</h1>
+      <p style="color:var(--muted); margin:8px 0 0; max-width:56ch;">
+        Your laptop can be shut. GitHub Actions wakes up at your times, runs the same code,
+        and posts. It needs three things from here: your settings, your schedule, and your keys.
+      </p>
+    </div>
+    {% if connected %}
+      <div class="status-ok">
+        <div class="status-big">✓ Connected</div>
+        <div class="hint">as <b>{{ login }}</b></div>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+{% if error %}<div class="flash flash-bad rise" style="margin:0 0 20px;">{{ error }}</div>{% endif %}
+{% if done %}<div class="flash flash-ok rise" style="margin:0 0 20px;">{{ done }}</div>{% endif %}
+
+<section class="grid grid-3 rise" style="margin-bottom:20px;">
+
+  <div class="card card-pad">
+    <h2 style="font-size:18px;">1 · Your GitHub app</h2>
+    <p style="color:var(--muted); font-size:14px; margin:6px 0 16px;">
+      Make this once on GitHub's website:
+      <a class="link" href="https://github.com/settings/applications/new" target="_blank" rel="noopener">
+        github.com/settings/applications/new</a> → any name → tick
+      <b>Enable Device Flow</b> → <b>Register</b>. Copy the <b>Client ID</b> (not a secret) here.
+    </p>
+
+    <form class="stack" method="post" action="/setup/github/client">
+      <input class="input" name="client_id" autocomplete="off"
+             value="{{ cfg.github_client_id }}" placeholder="Iv1.0123456789abcdef">
+      <input class="input" name="repo" autocomplete="off" style="margin-top:10px;"
+             value="{{ repo }}" placeholder="owner/repository">
+      <button class="btn btn-ghost" style="margin-top:12px;">Save</button>
+    </form>
+
+    {% if detected and not cfg.github_repo %}
+      <p class="hint" style="margin-top:10px;">Found in your git remote: <code>{{ detected }}</code></p>
+    {% endif %}
+  </div>
+
+  <div class="card card-pad">
+    <h2 style="font-size:18px;">2 · Sign in</h2>
+
+    {% if connected %}
+      <p style="color:var(--muted); font-size:14px; margin:6px 0 16px;">
+        Signed in as <b>{{ login }}</b>. The token lives in Windows Credential Manager,
+        never in a file.
+      </p>
+      <form method="post" action="/setup/github/disconnect">
+        <button class="btn btn-ghost" type="submit">Disconnect</button>
+      </form>
+    {% else %}
+      <p style="color:var(--muted); font-size:14px; margin:6px 0 16px;">
+        GitHub shows you a short code. Type it on their site — no password comes near this app.
+      </p>
+      <button class="btn" id="gh-connect" {{ '' if cfg.github_client_id else 'disabled' }}>
+        Connect GitHub
+      </button>
+
+      <div id="gh-flow" hidden style="margin-top:18px;">
+        <div class="stat-label">Type this code on GitHub</div>
+        <div class="copyrow">
+          <code id="gh-code" style="font-size:20px; letter-spacing:2px;"></code>
+          <button class="icon" type="button" id="gh-copy" title="Copy">⧉</button>
+        </div>
+        <a class="btn btn-ghost" id="gh-open" href="#" target="_blank" rel="noopener"
+           style="margin-top:12px;">Open github.com/login/device →</a>
+        <p class="hint" id="gh-status" style="margin-top:10px;">Waiting for you to approve…</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="grid grid-3 rise" style="margin-bottom:20px;">
+
+  <div class="card card-pad">
+    <h2 style="font-size:18px;">3 · Push your settings</h2>
+    <p style="color:var(--muted); font-size:14px; margin:6px 0 12px;">
+      Actions runs the code that is <i>in the repo</i>, so these files have to travel:
+    </p>
+    <ul class="filelist">
+      {% for path, label in synced %}<li><code>{{ path }}</code> <span>{{ label }}</span></li>{% endfor %}
+    </ul>
+    <p class="hint" style="margin:10px 0 14px;">
+      <code>data/state.json</code> stays out of it — the workflow writes that one itself.
+    </p>
+    <form method="post" action="/setup/github/push">
+      <button class="btn" type="submit" data-busy="Pushing…" {{ '' if connected and repo else 'disabled' }}>
+        Push to GitHub
+      </button>
+    </form>
+  </div>
+
+  <div class="card card-pad">
+    <h2 style="font-size:18px;">4 · Send your keys</h2>
+    <p style="color:var(--muted); font-size:14px; margin:6px 0 12px;">
+      Locked with the repository's public key before they leave this machine.
+      GitHub stores the locked box and never shows the value again — not even to you.
+    </p>
+
+    <div class="chips" style="margin-bottom:14px;">
+      {% for name in needed %}
+        <span class="chip {{ 'chip-teal' if name in on_github else 'chip-warn' }}">
+          {{ name }} {{ '✓' if name in on_github else '· not sent' }}
+        </span>
+      {% else %}
+        <span class="chip">nothing stored locally yet</span>
+      {% endfor %}
+    </div>
+
+    <form method="post" action="/setup/github/secrets">
+      <button class="btn" type="submit" data-busy="Sending…"
+              {{ '' if connected and repo and needed else 'disabled' }}>Send secrets</button>
+    </form>
+  </div>
+</section>
+
+<section class="card rise" style="overflow:hidden;">
+  <div class="card-head">
+    <h2>Recent Actions runs</h2>
+    {% if repo %}
+      <a class="link" href="https://github.com/{{ repo }}/actions" target="_blank" rel="noopener">Open on GitHub →</a>
+    {% endif %}
+  </div>
+
+  {% if runs %}
+    <table class="table">
+      <tbody>
+        {% for r in runs %}
+          <tr>
+            <td>{{ r.started }}</td>
+            <td>{{ r.name }}</td>
+            <td>
+              <span class="chip {{ 'chip-teal' if r.conclusion == 'success'
+                                   else 'chip-warn' if r.status != 'completed' else 'chip-bad' }}">
+                {{ r.conclusion or r.status }}
+              </span>
+            </td>
+            <td style="text-align:right;">
+              <a class="link" href="{{ r.url }}" target="_blank" rel="noopener">View ↗</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="empty">Nothing yet. Runs appear here once GitHub is connected and the workflow has fired.</div>
+  {% endif %}
+</section>
+
+<script src="/static/js/github.js" defer></script>
+{% endblock %}
