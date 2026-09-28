@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from agent import paths
 from agent.github import api
 from agent.jsonio import write_json
-from agent.state import State, load_state
+from agent.state import HistoryEntry, State, load_state
 
 # (repo path, what it is) - pushed from here to GitHub
 UP = (
@@ -59,6 +59,61 @@ def compare(repo: str, token: str) -> list[FileStatus]:
             status = "changed"
         result.append(FileStatus(path, label, status))
     return result
+
+
+def key(entry: HistoryEntry) -> tuple[str, str, str]:
+    """What makes one history entry the same entry as another.
+
+    created_at is stamped when the entry is made, so two runs on two machines
+    never collide - and the same entry copied between them always matches.
+    """
+    return (entry.date, entry.slot, entry.created_at)
+
+
+def merge(mine: State, theirs: State) -> State:
+    """Both histories, no duplicates, oldest first.
+
+    Neither side is the loser: GitHub knows about its scheduled posts, this
+    machine knows about the ones you approved by hand, and both really happened.
+    """
+    entries = {key(e): e for e in theirs.history}
+    entries.update({key(e): e for e in mine.history})
+
+    return State(
+        # whoever is further through the topic list has used more of it
+        next_topic_index=max(mine.next_topic_index, theirs.next_topic_index),
+        history=sorted(entries.values(), key=key),
+    )
+
+
+def unpushed_runs(repo: str, token: str) -> int:
+    """How many history entries this machine has that GitHub has not seen."""
+    remote, _ = api.get_file(repo, STATE_PATH, token)
+    theirs = State.from_dict(json.loads(remote)) if remote else State()
+    known = {key(e) for e in theirs.history}
+    return sum(1 for e in load_state().history if key(e) not in known)
+
+
+def push_state(repo: str, token: str) -> int:
+    """Send this machine's posts up, keeping GitHub's. Returns how many were new.
+
+    This is the one exception to "state only flows down": a post you approved
+    in the app really happened, and until GitHub knows, its scheduled run will
+    publish that slot all over again.
+    """
+    remote, _ = api.get_file(repo, STATE_PATH, token)
+    theirs = State.from_dict(json.loads(remote)) if remote else State()
+    mine = load_state()
+
+    merged = merge(mine, theirs)
+    added = len(merged.history) - len(theirs.history)
+    if added == 0 and merged.next_topic_index == theirs.next_topic_index:
+        return 0
+
+    text = json.dumps(merged.to_dict(), indent=2, ensure_ascii=False) + "\n"
+    api.put_file(repo, STATE_PATH, text, "chore: record posts made in the app", token)
+    write_json(paths.STATE_FILE, merged.to_dict())      # both sides now agree
+    return added
 
 
 def newer_runs(repo: str, token: str) -> int:

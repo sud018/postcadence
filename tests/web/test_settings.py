@@ -68,7 +68,7 @@ def test_badge_is_quiet_when_github_is_not_connected():
     assert client.get("/sync/status").json()["level"] == "off"
 
 
-def connect(monkeypatch, files, behind=0):
+def connect(monkeypatch, files, behind=0, ahead=0):
     import dataclasses
 
     from agent.config import save_config
@@ -76,6 +76,7 @@ def connect(monkeypatch, files, behind=0):
     monkeypatch.setattr(badge, "_token", lambda: "gho_test")
     monkeypatch.setattr(badge.sync, "compare", lambda repo, token: files)
     monkeypatch.setattr(badge.sync, "newer_runs", lambda repo, token: behind)
+    monkeypatch.setattr(badge.sync, "unpushed_runs", lambda repo, token: ahead)
 
 
 def test_badge_counts_unpushed_changes(monkeypatch):
@@ -113,6 +114,32 @@ def test_badge_answer_is_cached(monkeypatch):
 def test_pull_state_needs_a_connection():
     response = client.post("/sync/pull-state", follow_redirects=False)
     assert "error=" in response.headers["location"]
+
+
+def test_badge_counts_posts_made_here_that_github_has_not_seen(monkeypatch):
+    connect(monkeypatch, [FileStatus("data/config.json", "settings", "same")], ahead=2)
+    data = client.get("/sync/status").json()
+    assert data["level"] == "push"
+    assert data["text"] == "2 changes not on GitHub"
+
+
+def test_push_state_needs_a_connection():
+    response = client.post("/sync/push-state", follow_redirects=False)
+    assert "error=" in response.headers["location"]
+
+
+def test_push_state_reports_how_much_went_up(monkeypatch):
+    connect(monkeypatch, [])
+    monkeypatch.setattr(badge.sync, "push_state", lambda repo, token: 3)
+    response = client.post("/sync/push-state", follow_redirects=False)
+    assert "Sent+3+posts" in response.headers["location"]
+
+
+def test_push_state_says_when_there_was_nothing_to_send(monkeypatch):
+    connect(monkeypatch, [])
+    monkeypatch.setattr(badge.sync, "push_state", lambda repo, token: 0)
+    response = client.post("/sync/push-state", follow_redirects=False)
+    assert "already+knew" in response.headers["location"]
 
 
 def test_pull_state_reports_how_much_came_down(monkeypatch):

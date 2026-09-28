@@ -10,6 +10,7 @@ from agent.config import Config
 from agent.formatter import format_post
 from agent.linkedin.errors import LinkedInAuthError, LinkedInError
 from agent.linkedin.poster import post_text
+from agent.preview import PreviewError
 from agent.secrets_store import get_secret
 from agent.state import HistoryEntry, State, load_state, save_state
 from agent.topics import Pick, advance, load_topics, pick_topic
@@ -80,6 +81,24 @@ def publish(cfg: Config, pick: Pick, slot: str, text: str, date: str = "") -> st
     return post_id
 
 
+def record_failure(cfg: Config, slot: str, reason: str, topic: str = "", date: str = "") -> None:
+    """Leave a trace when something goes wrong before a post is even attempted.
+
+    Without this, a draft that could not be written and a draft issue that could
+    not be opened both look exactly like a quiet day: no post, no history, no
+    warning anywhere.
+    """
+    state = load_state()
+    today = date or today_in(cfg)
+    reason = reason[:200]
+
+    if state.has_failure(today, slot, reason):
+        return                              # already said so; do not repeat it
+
+    state.add(HistoryEntry(date=today, slot=slot, topic=topic, status="failed", error=reason))
+    save_state(state)
+
+
 def record_skip(cfg: Config, pick: Pick, slot: str, date: str = "") -> None:
     """Remember that this slot was deliberately passed over."""
     state = load_state()
@@ -94,7 +113,11 @@ def run_once(cfg: Config, slot: str, dry_run: bool = False, force: bool = False)
     if state.already_handled(today, slot) and not force:
         return RunResult(status="skipped", topic="", reason=f"{today} {slot} was already handled")
 
-    pick, text = compose(cfg, slot, state)
+    try:
+        pick, text = compose(cfg, slot, state)
+    except Exception as exc:                # the writer failed: say so, then raise
+        record_failure(cfg, slot, f"Could not write the post: {exc}")
+        raise
 
     if dry_run:
         return RunResult(status="dry-run", topic=pick.topic, text=text)
@@ -111,10 +134,19 @@ def prepare_preview(cfg: Config, slot: str) -> RunResult:
     if preview.open_draft(today, slot) is not None:
         return RunResult(status="skipped", topic="", reason=f"a draft for {slot} is already open")
 
-    pick, text = compose(cfg, slot, state)
+    try:
+        pick, text = compose(cfg, slot, state)
+    except Exception as exc:
+        record_failure(cfg, slot, f"Could not write the post: {exc}", date=today)
+        raise
 
-    number = preview.create_draft(today, slot, pick.topic, text,
-                                  cfg.preview_timeout_action, cfg.preview_minutes)
+    try:
+        number = preview.create_draft(today, slot, pick.topic, text,
+                                      cfg.preview_timeout_action, cfg.preview_minutes)
+    except PreviewError as exc:
+        record_failure(cfg, slot, f"Could not open the draft issue: {exc}", pick.topic, today)
+        raise
+
     return RunResult(status="drafted", topic=pick.topic, text=text, reason=f"issue #{number}")
 
 
@@ -128,7 +160,11 @@ def decide_preview(cfg: Config, slot: str) -> RunResult:
 
     draft = preview.open_draft(today, slot)
     if draft is None:
-        return RunResult(status="skipped", topic="", reason="no draft issue was found for this slot")
+        # The 08:30 run should have opened one. Something went wrong then, and
+        # staying quiet about it is how a day goes by with no post at all.
+        reason = "No draft issue was found, so there was nothing to publish."
+        record_failure(cfg, slot, reason, date=today)
+        return RunResult(status="failed", topic="", reason=reason)
 
     decision = draft.decision
     if decision == "none":

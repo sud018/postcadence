@@ -37,24 +37,26 @@ def _token() -> str:
 def _status() -> dict:
     """The badge's whole state, as one small dict."""
     if is_first_run():
-        return {"level": "off", "text": "Not set up", "files": [], "behind": 0}
+        return {"level": "off", "text": "Not set up", "files": [], "behind": 0, "ahead": 0}
 
     cfg = load_or_default()
     token = _token()
     if not (cfg.github_repo and token):
-        return {"level": "off", "text": "GitHub not connected", "files": [], "behind": 0}
+        return {"level": "off", "text": "GitHub not connected", "files": [], "behind": 0, "ahead": 0}
 
     try:
         files = sync.compare(cfg.github_repo, token)
         behind = sync.newer_runs(cfg.github_repo, token)
+        ahead = sync.unpushed_runs(cfg.github_repo, token)
     except GitHubAuthError:
-        return {"level": "error", "text": "GitHub sign-in expired", "files": [], "behind": 0}
+        return {"level": "error", "text": "GitHub sign-in expired", "files": [], "behind": 0, "ahead": 0}
     except (GitHubError, OSError):
-        return {"level": "error", "text": "Could not reach GitHub", "files": [], "behind": 0}
+        return {"level": "error", "text": "Could not reach GitHub", "files": [], "behind": 0, "ahead": 0}
 
     to_push = [f for f in files if f.status != "same"]
-    if to_push:
-        level, text = "push", f"{len(to_push)} change{'s' if len(to_push) != 1 else ''} not on GitHub"
+    if to_push or ahead:
+        waiting = len(to_push) + ahead
+        level, text = "push", f"{waiting} change{'s' if waiting != 1 else ''} not on GitHub"
     elif behind:
         level, text = "pull", f"{behind} new run{'s' if behind != 1 else ''} on GitHub"
     else:
@@ -65,6 +67,7 @@ def _status() -> dict:
         "text": text,
         "files": [{"path": f.path, "label": f.label, "status": f.status} for f in files],
         "behind": behind,
+        "ahead": ahead,
     }
 
 
@@ -74,6 +77,26 @@ def status(fresh: bool = False) -> JSONResponse:
     if fresh or not _cache or now - _cache["at"] > CACHE_SECONDS:
         _cache.update(at=now, value=_status())
     return JSONResponse(_cache["value"])
+
+
+@router.post("/push-state")
+def push_state() -> RedirectResponse:
+    """Tell GitHub about posts made here, so it does not publish them again."""
+    cfg = load_or_default()
+    token = _token()
+    if not (cfg.github_repo and token):
+        return RedirectResponse("/settings?error=Connect+GitHub+first.", status_code=303)
+
+    try:
+        count = sync.push_state(cfg.github_repo, token)
+    except GitHubError as exc:
+        from urllib.parse import quote
+        return RedirectResponse(f"/settings?error={quote(str(exc))}", status_code=303)
+
+    forget_sync_cache()
+    message = (f"Sent+{count}+post{'s' if count != 1 else ''}+to+GitHub."
+               if count else "GitHub+already+knew+about+every+post.")
+    return RedirectResponse(f"/settings?done={message}", status_code=303)
 
 
 @router.post("/pull-state")

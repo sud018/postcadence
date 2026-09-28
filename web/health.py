@@ -96,6 +96,22 @@ def check_topics(cfg: Config) -> Issue | None:
     return None
 
 
+def check_last_run(cfg: Config) -> Issue | None:
+    """A failure nobody looked at is the same as no warning at all."""
+    state = load_state()
+    failures = [h for h in state.history if h.status == "failed"]
+    if not failures:
+        return None
+
+    last = failures[-1]
+    if state.already_handled(last.date, last.slot):
+        return None                        # something later covered that slot
+
+    return Issue("warn", f"{last.date} {last.slot} did not post",
+                 last.error or "The run failed and nothing was published.",
+                 "/drafts", "Write one now")
+
+
 def check_github(cfg: Config) -> Issue | None:
     if not (cfg.github_repo and _secret("GITHUB_TOKEN")):
         return Issue("info", "GitHub is not connected here",
@@ -104,7 +120,8 @@ def check_github(cfg: Config) -> Issue | None:
     return None
 
 
-CHECKS = (check_model, check_linkedin, check_schedule, check_topics, check_github)
+CHECKS = (check_model, check_linkedin, check_schedule, check_topics,
+          check_last_run, check_github)
 
 
 def issues(cfg: Config | None = None) -> list[Issue]:

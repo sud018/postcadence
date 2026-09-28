@@ -93,8 +93,9 @@
 
   <div class="card-pad" style="padding-top:12px;">
     <p style="color:var(--muted); font-size:14px; margin:0 0 12px;">
-      Your settings travel <b>up</b> to GitHub. The post history travels <b>down</b> —
-      the workflow writes it, so GitHub's copy is the true one.
+      Your settings travel <b>up</b> to GitHub. The post history travels <b>down</b>, because the
+      workflow writes it — except for posts you approve here, which have to go <b>up</b> or GitHub
+      will publish that slot all over again.
     </p>
 
     <ul class="filelist" id="sync-files">
@@ -105,6 +106,9 @@
       <form method="post" action="/setup/github/push">
         <input type="hidden" name="next" value="/settings">
         <button class="btn" type="submit" id="sync-push" data-busy="Pushing…" disabled>↑ Push settings</button>
+      </form>
+      <form method="post" action="/sync/push-state">
+        <button class="btn btn-ghost" type="submit" id="sync-push-state" data-busy="Sending…" disabled>↑ Push post history</button>
       </form>
       <form method="post" action="/sync/pull-state">
         <button class="btn btn-ghost" type="submit" id="sync-pull" data-busy="Pulling…" disabled>↓ Pull post history</button>

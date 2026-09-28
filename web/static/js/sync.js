@@ -34,10 +34,13 @@ async function loadSync() {
       row.querySelector("span").textContent = LABELS[file.status] || file.status;
       list.appendChild(row);
     }
-    if (data.behind) {
+    if (data.behind || data.ahead) {
       const row = document.createElement("li");
       row.innerHTML = `<code>data/state.json</code><span class="fs-changed"></span>`;
-      row.querySelector("span").textContent = `${data.behind} newer on GitHub`;
+      const parts = [];
+      if (data.behind) parts.push(`${data.behind} newer on GitHub`);
+      if (data.ahead) parts.push(`${data.ahead} only here`);
+      row.querySelector("span").textContent = parts.join(" · ");
       list.appendChild(row);
     }
     if (!list.children.length) {
@@ -50,6 +53,8 @@ async function loadSync() {
   if (push) push.disabled = data.level !== "push";
   const pull = document.getElementById("sync-pull");
   if (pull) pull.disabled = !data.behind;
+  const pushState = document.getElementById("sync-push-state");
+  if (pushState) pushState.disabled = !data.ahead;
 }
 
 document.addEventListener("DOMContentLoaded", loadSync);

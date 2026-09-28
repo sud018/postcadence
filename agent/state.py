@@ -34,6 +34,14 @@ class State:
             raise ValueError(f"status must be one of {STATUSES}")
         self.history.append(entry)
 
+    def has_failure(self, date: str, slot: str, error: str) -> bool:
+        """Have we already complained about exactly this? Stops a repeated
+        failure filling the history with the same line every cron tick."""
+        return any(
+            h.date == date and h.slot == slot and h.status == "failed" and h.error == error
+            for h in self.history
+        )
+
     def already_handled(self, date: str, slot: str) -> bool:
         """True if this date+slot was already posted or skipped (so we never double-post)."""
         return any(

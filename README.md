@@ -285,4 +285,8 @@ ruff check .
 secret environment variables before each test. Keep it at the top of `tests/`,
 so it guards every test.
 
+See [how-it-behaves.md](docs/how-it-behaves.md) for every case and outcome —
+what closes a slot, what a draft does and does not use up, and where the two
+workers can tread on each other.
+
 See [CHANGELOG.md](CHANGELOG.md) for what changed in each version.

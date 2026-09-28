@@ -8,7 +8,7 @@ import pytest
 
 from agent import paths
 from agent.config import load_config, save_config
-from agent.state import load_state, save_state
+from agent.state import HistoryEntry, load_state, save_state
 from agent.topics import save_topics
 from web import health
 
@@ -101,3 +101,23 @@ def test_all_clear_when_everything_is_set(secrets):
     save_state(state)
     save_topics([f"Topic {n}" for n in range(10)])
     assert health.issues() == []
+
+
+def test_a_failure_nobody_acted_on_is_surfaced(secrets):
+    state = load_state()
+    state.add(HistoryEntry(date="2026-09-28", slot="09:00", topic="t",
+                           status="failed", error="No draft issue was found."))
+    save_state(state)
+
+    found = [i for i in health.issues() if "did not post" in i.title]
+    assert found and found[0].level == "warn"
+    assert "No draft issue" in found[0].detail
+
+
+def test_a_failure_that_was_followed_by_a_post_is_forgotten(secrets):
+    state = load_state()
+    state.add(HistoryEntry(date="2026-09-28", slot="09:00", topic="t", status="failed", error="boom"))
+    state.add(HistoryEntry(date="2026-09-28", slot="09:00", topic="t", status="posted", post_id="urn:1"))
+    save_state(state)
+
+    assert [i for i in health.issues() if "did not post" in i.title] == []
