@@ -1,0 +1,13 @@
+{# What LinkedIn actually says. Rendered on its own so Recheck can swap it in. #}
+<div class="checks">
+  {% for c in checks %}
+    <div class="check check-{{ c.result.state }}">
+      <span class="check-dot">{{ {'ok': '✓', 'bad': '✕', 'warn': '!', 'unknown': '·'}[c.result.state] }}</span>
+      <div>
+        <div class="check-label">{{ c.label }}</div>
+        <div class="check-detail">{{ c.result.detail }}</div>
+        {% if c.result.fix %}<div class="check-fix">→ {{ c.result.fix }}</div>{% endif %}
+      </div>
+    </div>
+  {% endfor %}
+</div>

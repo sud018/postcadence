@@ -9,10 +9,18 @@
     <div>
       <div class="eyebrow">Setup · where to post</div>
       <h1 style="font-size:30px; margin-top:6px;">Connect your account</h1>
-      <p style="color:var(--muted); margin:8px 0 0;">
-        You sign in on LinkedIn's own page. PostCadence never sees your password.
+      <p style="color:var(--muted); margin:8px 0 0; max-width:54ch;">
+        LinkedIn only lets an app post for people who signed in to that app, so you make a small
+        app of your own. It takes about ten minutes, once. Everything you need to paste is below.
       </p>
     </div>
+    {% if connected %}
+      <div class="status-ok">
+        <div class="status-big">✓ Connected</div>
+        <div class="hint">Member <code>{{ member_id }}</code></div>
+        <div class="hint">Token valid for <b>{{ days_left }}</b> more days</div>
+      </div>
+    {% endif %}
   </div>
 </section>
 
@@ -31,14 +39,75 @@
   </div>
 </section>
 
-<section class="grid grid-3 rise">
-  <div class="card card-pad">
-    <h2 style="font-size:18px;">1 · Your LinkedIn app</h2>
+<div class="li-grid rise">
+
+  {# ---- left: everything to copy ------------------------------------ #}
+  <section class="card card-pad">
+    <h2 style="font-size:18px;">Paste these into LinkedIn</h2>
     <p style="color:var(--muted); font-size:14px; margin:6px 0 16px;">
-      Get these two values from LinkedIn's developer website —
-      <a href="https://www.linkedin.com/developers/apps" target="_blank" rel="noopener">
-        linkedin.com/developers/apps</a> → your app → <b>Auth</b> tab — then paste them below.
-      PostCadence keeps them in Windows Credential Manager.
+      Nothing here is secret. Copy each one as the form asks for it.
+    </p>
+
+    <div class="stat-label">App name</div>
+    <div class="copyrow"><code id="f-name">{{ app_name }}</code>
+      <button class="icon" type="button" data-copy="f-name" title="Copy">⧉</button></div>
+
+    <div class="stat-label" style="margin-top:14px;">Description</div>
+    <div class="copyrow"><code id="f-desc">{{ app_description }}</code>
+      <button class="icon" type="button" data-copy="f-desc" title="Copy">⧉</button></div>
+
+    <div class="stat-label" style="margin-top:14px;">Privacy policy URL</div>
+    <div class="copyrow"><code id="f-privacy">{{ privacy_url }}</code>
+      <button class="icon" type="button" data-copy="f-privacy" title="Copy">⧉</button></div>
+
+    <div class="stat-label" style="margin-top:14px;">Redirect URL <span class="hint">(Auth tab)</span></div>
+    <div class="copyrow"><code id="f-cb">{{ callback }}</code>
+      <button class="icon" type="button" data-copy="f-cb" title="Copy">⧉</button></div>
+    <p class="hint">Must match exactly, including <code>127.0.0.1</code> and the port.</p>
+
+    <div class="logo-row">
+      <img src="/static/img/logo.png" alt="" width="52" height="52">
+      <div>
+        <div class="stat-label">App logo</div>
+        <div class="hint">Any square image works. This one is here if you want it.</div>
+      </div>
+      <a class="btn btn-ghost btn-sm" href="/static/img/logo.png" download="postcadence-logo.png">Download</a>
+    </div>
+  </section>
+
+  {# ---- right: the guided walk ------------------------------------- #}
+  <section class="card card-pad">
+    <div class="chart-head">
+      <div>
+        <h2 style="font-size:18px;">Do these four things</h2>
+        <p style="color:var(--muted); font-size:14px; margin:6px 0 0;">
+          Each button opens the right page. Tick them off as you go — this list remembers.
+        </p>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="li-reset" type="button">Reset ticks</button>
+    </div>
+
+    <ol class="walk" id="li-walk">
+      {% for s in manual_steps %}
+        <li class="walk-step" data-step="{{ s.id }}">
+          <label class="walk-tick"><input type="checkbox"><span></span></label>
+          <div class="walk-body">
+            <div class="walk-title">{{ s.title }}</div>
+            <div class="walk-detail">{{ s.detail }}</div>
+          </div>
+          <a class="btn btn-ghost btn-sm" href="{{ s.url }}" target="_blank" rel="noopener">{{ s.cta }}</a>
+        </li>
+      {% endfor %}
+    </ol>
+  </section>
+</div>
+
+<div class="li-grid rise" style="margin-top:20px;">
+
+  <section class="card card-pad">
+    <h2 style="font-size:18px;">Then paste your app's keys here</h2>
+    <p style="color:var(--muted); font-size:14px; margin:6px 0 16px;">
+      From the <b>Auth</b> tab of your app. Kept in Windows Credential Manager, never in a file.
     </p>
 
     <form class="stack" method="post" action="/setup/linkedin/credentials">
@@ -49,43 +118,31 @@
       <button class="btn btn-ghost" style="margin-top:12px;">Save credentials</button>
     </form>
 
-    <div style="margin-top:22px;">
-      <div class="stat-label">Copy this redirect URL</div>
-      <div class="copyrow">
-        <code id="cb">{{ callback }}</code>
-        <button class="icon" type="button" data-copy="cb" title="Copy">⧉</button>
-      </div>
-      <p class="hint">
-        Paste it on LinkedIn's website, not here:
-        <a href="https://www.linkedin.com/developers/apps" target="_blank" rel="noopener">
-          linkedin.com/developers/apps</a> → your app → <b>Auth</b> tab →
-        <b>Authorized redirect URLs for your app</b> → <b>Add redirect URL</b> → paste → <b>Update</b>.
-      </p>
-      <p class="hint">It must match exactly — including <code>127.0.0.1</code> and the port.</p>
+    <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--ink-700);">
+      <a class="btn" href="/setup/linkedin/start">{{ 'Reconnect' if connected else 'Connect LinkedIn' }}</a>
+      <p class="hint" style="margin-top:10px;">Opens LinkedIn, then comes straight back here.</p>
     </div>
-  </div>
+  </section>
 
-  <div class="card card-pad">
-    <h2 style="font-size:18px;">2 · Sign in</h2>
-
-    {% if connected %}
-      <div class="status-ok">
-        <div class="status-big">✓ Connected</div>
-        <div class="hint">Member <code>{{ member_id }}</code></div>
-        <div class="hint">Token valid for <b>{{ days_left }}</b> more days</div>
+  <section class="card card-pad">
+    <div class="chart-head">
+      <div>
+        <h2 style="font-size:18px;">What LinkedIn says</h2>
+        <p style="color:var(--muted); font-size:14px; margin:6px 0 0;">
+          Asks LinkedIn directly, so a missing product or a mistyped URL is named rather than guessed.
+        </p>
       </div>
-      <a class="btn btn-ghost" href="/setup/linkedin/start" style="margin-top:16px;">Reconnect</a>
-    {% else %}
-      <p style="color:var(--muted); font-size:14px; margin:6px 0 16px;">
-        Opens LinkedIn, then comes straight back here.
-      </p>
-      <a class="btn" href="/setup/linkedin/start">Connect LinkedIn</a>
-    {% endif %}
-  </div>
-</section>
+      <button class="btn btn-ghost btn-sm" id="li-recheck" type="button" data-busy="Asking…">Recheck</button>
+    </div>
 
-<section class="card card-pad rise">
-  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div id="li-checks">
+      <p class="hint" style="padding:18px 0;">Press <b>Recheck</b> once you have saved your keys.</p>
+    </div>
+  </section>
+</div>
+
+<section class="card card-pad rise" style="margin-top:20px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
     <div>
       <h2 style="font-size:18px;">Next: your posting schedule</h2>
       <p style="color:var(--muted); margin:6px 0 0; font-size:14px;">How often, and at what times.</p>
@@ -94,12 +151,5 @@
   </div>
 </section>
 
-<script>
-  document.querySelectorAll("[data-copy]").forEach((button) =>
-    button.addEventListener("click", async () => {
-      await navigator.clipboard.writeText(document.getElementById(button.dataset.copy).textContent);
-      button.textContent = "✓";
-      setTimeout(() => (button.textContent = "⧉"), 1200);
-    }));
-</script>
+<script src="/static/js/linkedin.js" defer></script>
 {% endblock %}

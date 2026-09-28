@@ -110,6 +110,16 @@ a model name.
 LinkedIn only lets apps post for people who signed in to them. So you create a
 small app of your own. Only you will ever sign in to it.
 
+**The app walks you through this.** Open **Setup → LinkedIn** and work down the
+page: the left card has every value to paste (app name, description, privacy
+policy URL, redirect URL, and the logo), the right card has four buttons that
+open the right LinkedIn pages in order, and **Recheck** asks LinkedIn what is
+still missing — a product you have not requested, or a redirect URL that does
+not match — instead of leaving you to find out at 09:00. The steps below are
+the same thing in writing.
+
+![LinkedIn setup](docs/screenshots/linkedin.png)
+
 1. **You need a LinkedIn Page.** Every app has to belong to one. If you don't
    have one, go to [linkedin.com/company/setup/new](https://www.linkedin.com/company/setup/new/)
    and make a simple page with your name. Nobody needs to follow it.

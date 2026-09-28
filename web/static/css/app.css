@@ -393,3 +393,45 @@ select.input { appearance:none; cursor:pointer; }
 .hbar-track { height:14px; }
 .hbar-fill { display:block; height:100%; min-width:2px; border-radius:0 4px 4px 0; background:var(--brand-400); }
 .hbar-value { color:var(--muted); text-align:right; font-variant-numeric:tabular-nums; }
+
+/* LinkedIn setup: copy card, guided walk, checks ------------------------- */
+.li-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+
+.logo-row { display:flex; align-items:center; gap:14px; margin-top:20px; padding-top:16px;
+            border-top:1px solid var(--ink-700); }
+.logo-row img { border-radius:14px; }
+.logo-row > div { flex:1; }
+
+.walk { list-style:none; counter-reset:walk; margin:16px 0 0; padding:0;
+        display:flex; flex-direction:column; gap:10px; }
+.walk-step { display:flex; align-items:center; gap:14px; padding:14px;
+             background:var(--ink-900); border:1px solid var(--ink-700); border-radius:14px;
+             transition:.18s; }
+.walk-step.is-done { opacity:.55; }
+.walk-step.is-done .walk-title { text-decoration:line-through; }
+.walk-tick { position:relative; flex:none; cursor:pointer; }
+.walk-tick input { position:absolute; opacity:0; width:0; height:0; }
+.walk-tick span { display:grid; place-items:center; width:26px; height:26px; border-radius:9px;
+                  border:1px solid var(--ink-600); background:var(--ink-800); transition:.15s; }
+.walk-tick span::after { content:"✓"; font-size:14px; color:transparent; }
+.walk-tick input:checked + span { background:var(--teal-500); border-color:var(--teal-500); }
+.walk-tick input:checked + span::after { color:#fff; }
+.walk-tick input:focus-visible + span { box-shadow:0 0 0 3px rgba(99,102,241,.35); }
+.walk-body { flex:1; min-width:0; }
+.walk-title { color:var(--white); font-weight:600; font-size:14px; }
+.walk-detail { color:var(--muted); font-size:13px; margin-top:3px; line-height:1.5; }
+
+.checks { display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+.check { display:flex; gap:12px; padding:13px 14px; border-radius:13px;
+         background:var(--ink-900); border:1px solid var(--ink-700); }
+.check-dot { flex:none; display:grid; place-items:center; width:22px; height:22px;
+             border-radius:50%; font-size:12px; font-weight:700; background:var(--ink-700); color:var(--muted); }
+.check-ok .check-dot { background:rgba(20,184,166,.18); color:var(--teal-400); }
+.check-bad .check-dot { background:rgba(251,113,133,.18); color:var(--rose); }
+.check-bad { border-color:rgba(251,113,133,.30); }
+.check-warn .check-dot { background:rgba(251,191,36,.18); color:var(--amber); }
+.check-label { color:var(--white); font-weight:600; font-size:14px; }
+.check-detail { color:var(--muted); font-size:13px; margin-top:2px; line-height:1.5; }
+.check-fix { color:var(--brand-300); font-size:13px; margin-top:5px; line-height:1.5; }
+
+@media (max-width: 900px) { .li-grid { grid-template-columns:1fr; } }
