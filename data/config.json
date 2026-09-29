@@ -2,10 +2,9 @@
   "llm_provider": "openai",
   "llm_model": "",
   "timezone": "America/Los_Angeles",
-  "posts_per_day": 2,
+  "posts_per_day": 1,
   "post_times": [
-    "09:00",
-    "18:30"
+    "10:00"
   ],
   "mode": "preview",
   "preview_minutes": 30,
