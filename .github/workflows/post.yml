@@ -5,11 +5,11 @@ on:
     # Generated from data/config.json - edit your schedule in the app.
     - cron: "20 0 * * *"
     - cron: "50 0 * * *"
+    - cron: "20 1 * * *"
     - cron: "30 15 * * *"
     - cron: "0 16 * * *"
     - cron: "30 16 * * *"
     - cron: "0 17 * * *"
-    - cron: "20 23 * * *"
     - cron: "50 23 * * *"
 
   workflow_dispatch:
