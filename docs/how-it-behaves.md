@@ -37,29 +37,97 @@ that day.
 `failed` deliberately does not close the slot: a failure should be retried, not
 swallowed.
 
-## 3. One slot's day, minute by minute
+## 3. One slot's day
 
-Your settings: one post at **09:00**, mode **preview**, `preview_minutes` 30,
-`catch_up_hours` 6.
+Settings for these examples: one post at **09:00**, mode **preview**,
+`preview_minutes` 30, `catch_up_hours` 6.
 
-| Time | GitHub Actions does |
-|---|---|
-| from 08:30 | The first run to arrive writes the post and opens a GitHub **Issue** titled `Draft post for 2026-09-28 09:00` |
-| next 30 minutes | You may comment `/approve`, `/cancel`, or edit the text in the issue |
-| after that | The next run publishes it. Your edits are published as edited. `/cancel` skips. No comment at all → falls back to `preview_timeout_action` (yours: post) |
-| until 15:00 | Catch-up window: everything above may happen late and still work |
-| after 15:00 | The slot is abandoned. **Nothing is recorded.** The day simply has no post |
+### The one rule that explains everything
 
-**The review window is measured from the issue, not from the clock.** GitHub
-often starts a scheduled run 80 minutes or more late. A draft written late still
-gets its full `preview_minutes` before anything is published, and the run that
-opens the issue never publishes it in the same breath.
+**Nothing happens between runs.** GitHub only wakes up at cron ticks. Writing
+the draft, checking how long it has been open, publishing - all of it happens
+*during a run*. Between runs the agent does not exist, and no clock is ticking
+anywhere that can act on your behalf.
 
-In **auto** mode there is no issue and no 08:30 step: the 09:00 run writes and
-publishes in one go.
+Your 09:00 slot gets four ticks a day. Two are for the slot itself, two are the
+winter offsets - which still fire in summer, and give you free extra chances:
 
-Scheduled runs on GitHub are often 5–20 minutes late, and at busy times can be
-dropped entirely. That is why the catch-up window exists.
+```
+   08:30      09:00      09:30      10:00      <- GitHub is asked to wake
+     |          |          |          |
+     v          v          v          v
+```
+
+### A. GitHub is on time
+
+```
+08:30  run --> no draft yet --> CREATE the draft issue
+                                notification reaches your phone
+                                this run does nothing else
+
+09:00  run --> draft is 30 min old --> PUBLISH
+```
+
+### B. GitHub is an hour late
+
+```
+08:30 tick ------ delayed ------> 09:30  CREATE the draft
+                                         notification reaches your phone now
+
+09:00 tick ------ delayed ------> 10:00  draft is 30 min old --> PUBLISH
+```
+
+The post lands at 10:00 instead of 09:00. Late, but it happens - and you still
+got your full 30 minutes to look at it.
+
+### C. You approve
+
+```
+09:30  CREATE the draft   -> your phone buzzes
+09:38  you comment /approve        <- nothing happens yet
+10:00  run --> reads /approve --> PUBLISH
+```
+
+**Approving does not publish.** Your comment sits in the issue until the next
+run reads it. There is nothing listening in between.
+
+### D. You are busy and never look
+
+```
+09:30  CREATE the draft   -> buzz (you are in a meeting)
+10:00  run --> 30 min passed, no comment --> your fallback applies
+                                             "Publish it anyway" -> PUBLISHES
+```
+
+Silence is a decision: whatever `preview_timeout_action` says. Set it to
+**skip** on the Schedule page if you would rather silence meant "do not post".
+
+### E. You do not look, and GitHub is very late
+
+```
+09:30  CREATE the draft
+  ...  no run for hours ...
+15:00  run --> 09:00 + 6h catch-up has expired --> gives up
+                                                   dashboard: "09:00 did not post"
+```
+
+`catch_up_hours` is the hard stop. It is what stops a post going out at 3am.
+
+### Why a run never publishes what it just wrote
+
+A run that opens the issue leaves that slot for the next run. Two reasons:
+
+1. A draft written one second ago is not one you have had a chance to read.
+2. GitHub's issue list does not show back an issue that quickly. On
+   28 September a single run logged `Draft 18:30: drafted - issue #4` and then,
+   0.4 seconds later, `No draft issue was found`.
+
+It costs one tick of delay and removes a whole class of surprise.
+
+### In auto mode
+
+No issue, no review, no waiting. The first run at or after 09:00 writes the post
+and publishes it in one go.
 
 ## 4. Writing drafts in the app
 
@@ -176,7 +244,20 @@ dropped silently — no entry, no warning.
 | You pressed Skip | `skipped` | your disk only |
 | Posting from the app failed | `failed` + error | your disk only |
 
-## 7. The two real hazards
+## 7. Two hazards, and one bug this document was written after
+
+### An evening slot used to vanish at midnight
+
+A slot is a clock time, so "18:30" had to be turned into a date before anything
+could act on it - and the code only ever used *today's* date. At 00:08, "18:30"
+meant tonight, which is in the future, so a post that was still owed from last
+night quietly stopped existing.
+
+That is exactly how 28 September was lost: the draft was written at 23:35, and
+every run after midnight said "Nothing due right now". Each slot is now checked
+against both today's and yesterday's date, so an evening post survives the
+change of day for its full catch-up window.
+
 
 ### Local posts are invisible to GitHub
 
@@ -221,10 +302,13 @@ still records nothing.
 | Question | Answer |
 |---|---|
 | Does writing a draft use up a topic? | No. Only a published post does |
-| Does approving a draft wait for the slot time? | No. It posts immediately |
+| Does "Approve & post now" in the app wait for the slot? | No. It posts the instant you press it |
 | Can I post twice in one slot? | Yes, by approving two drafts. Nothing prevents it |
 | Does Discard cost me anything? | No. The topic and the slot stay available |
 | Does Skip use up a topic? | No, but it closes the slot for the day |
 | What if both my PC and GitHub post? | Two posts. Press **Push post history** after posting here |
+| Does `/approve` on a GitHub issue publish straight away? | No. The next run reads it and publishes then |
+| Will my 09:00 post go out at 09:00? | Often later. GitHub's scheduler is routinely 1-2 hours late |
+| Does a late draft lose my review time? | No. The 30 minutes start when the issue opens |
 | How late can a post be? | `catch_up_hours` after the slot; then it is dropped |
 | Do my edits in the GitHub issue get published? | Yes, exactly as edited |
