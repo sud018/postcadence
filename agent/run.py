@@ -126,9 +126,9 @@ def run_once(cfg: Config, slot: str, dry_run: bool = False, force: bool = False)
     return RunResult(status="posted", topic=pick.topic, text=text, post_id=post_id)
 
 
-def prepare_preview(cfg: Config, slot: str) -> RunResult:
+def prepare_preview(cfg: Config, slot: str, date: str = "") -> RunResult:
     """Write a draft and open it as a GitHub Issue for review."""
-    today = today_in(cfg)
+    today = date or today_in(cfg)
     state = load_state()
 
     if preview.open_draft(today, slot) is not None:
@@ -150,9 +150,9 @@ def prepare_preview(cfg: Config, slot: str) -> RunResult:
     return RunResult(status="drafted", topic=pick.topic, text=text, reason=f"issue #{number}")
 
 
-def decide_preview(cfg: Config, slot: str) -> RunResult:
+def decide_preview(cfg: Config, slot: str, date: str = "") -> RunResult:
     """Act on the open draft: publish it, publish your edit, or skip it."""
-    today = today_in(cfg)
+    today = date or today_in(cfg)
     state = load_state()
 
     if state.already_handled(today, slot):

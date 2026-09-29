@@ -17,26 +17,38 @@ def slot_time(now: datetime, slot: str):
     hour, minute = (int(part) for part in slot.split(":"))
     return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
 
-def due_slots(cfg: Config, state: State, now: datetime | None = None) -> list[str]:
-    """Slots whose time has passed today, are still within the catch-up
-    window, and have not already been posted or skipped."""
+def occurrences(now: datetime, slot: str) -> list[datetime]:
+    """Today's and yesterday's occurrence of this clock time.
+
+    Yesterday's matters: an evening slot whose catch-up window runs past
+    midnight is still owed a post, and looking only at today's date would
+    quietly abandon it the moment the clock ticks over.
+    """
+    today = slot_time(now, slot)
+    return [today, today - timedelta(days=1)]
+
+
+def due_slots(cfg: Config, state: State, now: datetime | None = None) -> list[tuple[str, str]]:
+    """(date, slot) pairs to act on: the time has passed, the catch-up window
+    is still open, and nothing has been posted or skipped for them yet."""
     now = now or local_now(cfg)
-    today = now.date().isoformat()
     window = timedelta(hours=cfg.catch_up_hours)
 
     due = []
     for slot in cfg.post_times:
-        scheduled = slot_time(now, slot)
-        if now < scheduled:
-            continue                      # not time yet
-        if now - scheduled > window:
-            continue                      # too late; skip rather than post at 3am
-        if state.already_handled(today, slot):
-            continue                      # already done
-        due.append(slot)
-    return due
+        for scheduled in occurrences(now, slot):
+            if now < scheduled:
+                continue                  # not time yet
+            if now - scheduled > window:
+                continue                  # too late; skip rather than post at 3am
+            date = scheduled.date().isoformat()
+            if state.already_handled(date, slot):
+                continue                  # already done
+            due.append((date, slot))
+    return sorted(due)
 
-def prepare_slots(cfg: Config, state: State, now: datetime | None = None) -> list[str]:
+def prepare_slots(cfg: Config, state: State,
+                  now: datetime | None = None) -> list[tuple[str, str]]:
     """Slots that need a draft written now.
 
     From `preview_minutes` before the slot until the catch-up window closes -
@@ -52,21 +64,21 @@ def prepare_slots(cfg: Config, state: State, now: datetime | None = None) -> lis
         return []
 
     now = now or local_now(cfg)
-    today = now.date().isoformat()
     lead = timedelta(minutes=cfg.preview_minutes)
     window = timedelta(hours=cfg.catch_up_hours)
 
     ready = []
     for slot in cfg.post_times:
-        scheduled = slot_time(now, slot)
-        if now < scheduled - lead:
-            continue                      # still too early to write it
-        if now - scheduled > window:
-            continue                      # too late to bother; the day is gone
-        if state.already_handled(today, slot):
-            continue
-        ready.append(slot)
-    return ready
+        for scheduled in occurrences(now, slot):
+            if now < scheduled - lead:
+                continue                  # still too early to write it
+            if now - scheduled > window:
+                continue                  # too late to bother; the day is gone
+            date = scheduled.date().isoformat()
+            if state.already_handled(date, slot):
+                continue
+            ready.append((date, slot))
+    return sorted(ready)
 
 def cron_lines(cfg: Config, year: int | None = None) -> list[str]:
     """UTC cron lines covering each slot in both winter and summer offsets.

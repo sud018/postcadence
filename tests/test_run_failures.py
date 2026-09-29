@@ -1,6 +1,7 @@
 """A failure that leaves no trace looks exactly like a quiet day. It must not."""
 from __future__ import annotations
 
+import argparse
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -192,3 +193,36 @@ def test_a_day_of_late_runs_still_gets_the_post_out(monkeypatch):
                                               (clock["now"] - timedelta(minutes=45))
                                               .isoformat().replace("+00:00", "Z")))
     assert run.decide_preview(CFG, "09:00").status == "posted"
+
+
+def test_a_draft_written_this_second_is_not_judged_in_the_same_run(monkeypatch):
+    """28 September, run at 23:35, verbatim from the log:
+
+        Draft 18:30: drafted - issue #4
+        === 18:30 === failed
+        No draft issue was found, so there was nothing to publish.
+
+    Both lines, 0.4 seconds apart, in one run. GitHub's issue list had not
+    caught up with the issue it had just created - and even if it had, a draft
+    nobody has seen yet must not be judged. run-due now leaves a slot it has
+    just drafted to the next run.
+    """
+    from agent.cli.posting import cmd_run_due
+
+    drafted, decided = [], []
+    monkeypatch.setattr("agent.cli.posting.load_config", lambda: CFG)
+    monkeypatch.setattr("agent.cli.posting.prepare_slots",
+                        lambda cfg, state: [(TODAY, "09:00")])
+    monkeypatch.setattr("agent.cli.posting.due_slots",
+                        lambda cfg, state: [(TODAY, "09:00")])
+    monkeypatch.setattr("agent.cli.posting.prepare_preview",
+                        lambda cfg, slot, date: drafted.append(slot)
+                        or run.RunResult(status="drafted", topic="t", reason="issue #4"))
+    monkeypatch.setattr("agent.cli.posting.decide_preview",
+                        lambda cfg, slot, date: decided.append(slot)
+                        or run.RunResult(status="posted", topic="t"))
+
+    cmd_run_due(argparse.Namespace(dry_run=False))
+
+    assert drafted == ["09:00"]
+    assert decided == []          # left for the next run, not published blind

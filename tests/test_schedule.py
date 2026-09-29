@@ -28,15 +28,15 @@ def test_nothing_due_before_the_first_slot():
 
 
 def test_slot_is_due_right_after_its_time():
-    assert due_slots(cfg(), State(), at(9, 1)) == ["09:00"]
+    assert due_slots(cfg(), State(), at(9, 1)) == [("2026-09-21", "09:00")]
 
 
 def test_late_run_still_catches_up_inside_the_window():
-    assert due_slots(cfg(), State(), at(14, 30)) == ["09:00"]
+    assert due_slots(cfg(), State(), at(14, 30)) == [("2026-09-21", "09:00")]
 
 
 def test_too_late_is_skipped_rather_than_posted_at_midnight():
-    assert "09:00" not in due_slots(cfg(), State(), at(23, 0))
+    assert ("2026-09-21", "09:00") not in due_slots(cfg(), State(), at(23, 0))
 
 
 def test_already_posted_slot_is_not_due():
@@ -46,7 +46,9 @@ def test_already_posted_slot_is_not_due():
 
 
 def test_both_slots_can_be_due_together_after_an_outage():
-    assert due_slots(cfg(catch_up_hours=24), State(), at(18, 0)) == ["09:00", "17:30"]
+    due = due_slots(cfg(catch_up_hours=24), State(), at(18, 0))
+    assert ("2026-09-21", "09:00") in due
+    assert ("2026-09-21", "17:30") in due
 
 
 def test_slot_time_keeps_the_date_and_zone():
@@ -66,7 +68,7 @@ def test_a_draft_is_not_written_before_the_review_window_opens():
 
 def test_a_draft_is_written_inside_the_review_window():
     preview_cfg = cfg(mode="preview", preview_minutes=30)
-    assert prepare_slots(preview_cfg, State(), at(8, 45)) == ["09:00"]
+    assert prepare_slots(preview_cfg, State(), at(8, 45)) == [("2026-09-21", "09:00")]
 
 
 def test_a_late_run_still_writes_the_draft():
@@ -76,7 +78,7 @@ def test_a_late_run_still_writes_the_draft():
     wrote nothing, and the day passed with no post and no explanation.
     """
     preview_cfg = cfg(mode="preview", preview_minutes=30)
-    assert prepare_slots(preview_cfg, State(), at(10, 30)) == ["09:00"]
+    assert prepare_slots(preview_cfg, State(), at(10, 30)) == [("2026-09-21", "09:00")]
 
 
 def test_a_draft_is_not_written_once_the_catch_up_window_closes():
@@ -88,6 +90,19 @@ def test_no_draft_for_a_slot_that_is_already_done():
     preview_cfg = cfg(mode="preview", preview_minutes=30)
     state = State(history=[posted("09:00")])
     assert prepare_slots(preview_cfg, state, at(8, 45)) == []
+
+
+def test_an_evening_slot_is_still_owed_after_midnight():
+    """The bug that lost 28 September: the draft was written at 23:35 and
+    published by nobody, because after midnight the code only ever looked at
+    today's date - and by then 18:30 meant tonight, not last night."""
+    evening = cfg(post_times=["09:00", "18:30"])
+    assert ("2026-09-21", "18:30") in due_slots(evening, State(), at(0, 8, day=22))
+
+
+def test_yesterday_is_forgotten_once_its_window_closes():
+    evening = cfg(post_times=["09:00", "18:30"])
+    assert due_slots(evening, State(), at(1, 0, day=22)) == []
 
 
 def test_auto_mode_never_prepares():

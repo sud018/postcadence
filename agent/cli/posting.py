@@ -39,21 +39,28 @@ def cmd_run_due(args: argparse.Namespace) -> int:
     """What the scheduler calls: draft anything coming up, then act on anything due."""
     cfg = load_config()
 
-    for slot in prepare_slots(cfg, load_state()):
-        result = prepare_preview(cfg, slot)
-        console.print(f"[cyan]Draft {slot}:[/] {result.status} - {result.reason}")
+    just_drafted = set()
+    for date, slot in prepare_slots(cfg, load_state()):
+        result = prepare_preview(cfg, slot, date)
+        if result.status == "drafted":
+            just_drafted.add((date, slot))
+        console.print(f"[cyan]Draft {date} {slot}:[/] {result.status} - {result.reason}")
 
-    slots = due_slots(cfg, load_state())
+    # A draft written a second ago is not one you have had a chance to read,
+    # and GitHub's issue list does not show it back to us that quickly either.
+    # Leave it for the next run.
+    slots = [pair for pair in due_slots(cfg, load_state()) if pair not in just_drafted]
+
     if not slots:
         console.print("[dim]Nothing due right now.[/]")
         return 0
 
-    for slot in slots:
+    for date, slot in slots:
         if cfg.mode == "preview":
-            result = decide_preview(cfg, slot)
+            result = decide_preview(cfg, slot, date)
         else:
             result = run_once(cfg, slot, dry_run=args.dry_run)
-        _show(result, heading=f"=== {slot} ===")
+        _show(result, heading=f"=== {date} {slot} ===")
     return 0
 
 
