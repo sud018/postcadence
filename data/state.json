@@ -45,6 +45,15 @@
       "post_id": "urn:li:share:7510414078482288641",
       "error": "",
       "created_at": "2026-09-28T19:04:13+00:00"
+    },
+    {
+      "date": "2026-09-28",
+      "slot": "18:30",
+      "topic": "",
+      "status": "failed",
+      "post_id": "",
+      "error": "No draft issue was found, so there was nothing to publish.",
+      "created_at": "2026-09-29T06:35:51+00:00"
     }
   ]
 }
