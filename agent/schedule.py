@@ -103,3 +103,27 @@ def cron_lines(cfg: Config, year: int | None = None) -> list[str]:
 def _utc_hm(moment: datetime) -> tuple[int, int]:
     utc = moment.astimezone(ZoneInfo("UTC"))
     return utc.hour, utc.minute
+
+
+def trigger_times(cfg: Config) -> list[str]:
+    """Local clock times an outside scheduler should poke the workflow at.
+
+    These are *local* times, unlike cron_lines(), because a scheduling service
+    understands timezones and will follow daylight saving on its own. That is
+    why there are half as many: no winter and summer copies of each slot.
+
+    Three ticks per slot in preview mode - write the draft, publish it a review
+    window later, and one spare in case a tick is missed. Two in auto mode.
+    """
+    step = timedelta(minutes=cfg.preview_minutes or 30)
+    moments: set[tuple[int, int]] = set()
+
+    for slot in cfg.post_times:
+        hour, minute = (int(part) for part in slot.split(":"))
+        at = datetime(2000, 1, 1, hour, minute)         # a date nobody sees
+        offsets = (-1, 0, 1) if cfg.mode == "preview" else (0, 1)
+        for n in offsets:
+            moved = at + n * step
+            moments.add((moved.hour, moved.minute))
+
+    return [f"{hour:02d}:{minute:02d}" for hour, minute in sorted(moments)]

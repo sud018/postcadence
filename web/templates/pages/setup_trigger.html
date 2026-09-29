@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Punctuality · PostCadence<script src="/static/js/trigger.js" defer></script>
+{% endblock %}
+{% block content %}
+
+<section class="hero rise" style="padding:28px 32px;">
+  <div class="hero-inner">
+    <div>
+      <div class="eyebrow">Optional · for when GitHub runs late</div>
+      <h1 style="font-size:30px; margin-top:6px;">Make the schedule punctual</h1>
+      <p style="color:var(--muted); margin:8px 0 0; max-width:60ch;">
+        GitHub calls its own scheduled runs best-effort, and lately they have arrived
+        anywhere from eighty minutes to six hours late. Posting still works without this
+        page — it is just late. An outside clock that can make one web request fixes it.
+      </p>
+    </div>
+  </div>
+</section>
+
+{% if error %}<div class="flash flash-bad rise" style="margin:0 0 20px;">{{ error }}</div>{% endif %}
+{% if done %}<div class="flash flash-ok rise" style="margin:0 0 20px;">{{ done }}</div>{% endif %}
+
+<section class="card card-pad rise" style="margin-bottom:20px;">
+  <h2 style="font-size:18px;">Pick how your posts get started</h2>
+  <p style="color:var(--muted); font-size:14px; margin:6px 0 14px;">
+    All three run exactly the same code. They differ only in who says "go".
+  </p>
+  <table class="table">
+    <thead>
+      <tr><th>Way in</th><th>Needs an account</th><th>Works with your PC off</th><th>On time?</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>GitHub's schedule</b> <span class="hint">already on</span></td>
+        <td>no</td><td>yes</td>
+        <td><span class="chip chip-warn">often hours late</span></td>
+      </tr>
+      <tr>
+        <td><b>Your own computer</b> <span class="hint">Task Scheduler / cron</span></td>
+        <td>no</td><td>no</td>
+        <td><span class="chip chip-teal">to the second</span></td>
+      </tr>
+      <tr>
+        <td><b>A scheduling service</b> <span class="hint">the steps below</span></td>
+        <td>one free one</td><td>yes</td>
+        <td><span class="chip chip-teal">to the minute</span></td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="hint" style="margin-top:12px;">
+    Leave GitHub's schedule switched on whichever you add. A second way in costs nothing,
+    and <code>run-due</code> never posts the same slot twice.
+  </p>
+</section>
+
+<section class="grid grid-3 rise" style="margin-bottom:20px;">
+
+  <div class="card card-pad">
+    <h2 style="font-size:18px;">1 · Make a token</h2>
+    <p style="color:var(--muted); font-size:14px; margin:6px 0 12px;">
+      This one is going to live in someone else's database, so give it as little power
+      as possible. On
+      <a class="link" href="https://github.com/settings/personal-access-tokens/new"
+         target="_blank" rel="noopener">github.com → fine-grained tokens</a>:
+    </p>
+    <ul class="filelist">
+      <li><span>Repository access → <b>Only select repositories</b> → {{ repo or 'this repo' }}</span></li>
+      <li><span>Permissions → Repository → <b>{{ token_scope }}</b></span></li>
+      <li><span>Expiration → <b>90 days</b>, and put a reminder in your calendar</span></li>
+    </ul>
+    <p class="hint" style="margin-top:12px;">
+      Nothing else. With only this, the worst anyone who steals it can do is start
+      your posting workflow. A classic token with <code>repo</code> scope would hand
+      over your whole account — do not use one.
+    </p>
+  </div>
+
+  <div class="card card-pad">
+    <h2 style="font-size:18px;">2 · Make the job</h2>
+    <p style="color:var(--muted); font-size:14px; margin:6px 0 12px;">
+      Any service that can send a POST works.
+      <a class="link" href="https://cron-job.org" target="_blank" rel="noopener">cron-job.org</a>
+      is free, needs only an email, and goes down to the minute. Create a cronjob and
+      paste in the four boxes below.
+    </p>
+    <p class="hint">
+      Set its <b>timezone to {{ cfg.timezone }}</b> — the same one your schedule uses.
+      Then daylight saving is handled for you, which is why these times are your local
+      ones and the cron inside <code>post.yml</code> is not.
+    </p>
+  </div>
+</section>
+
+<section class="card card-pad rise" style="margin-bottom:20px;">
+  <h2 style="font-size:18px;">3 · The four things to paste</h2>
+
+  <div class="stat-label" style="margin-top:16px;">URL — method POST</div>
+  <div class="copyrow"><code id="t-url">{{ url }}</code>
+    <button class="icon" type="button" data-copy="t-url" title="Copy">⧉</button></div>
+  {% if not repo %}
+    <p class="hint" style="margin-top:6px;">
+      Replace <code>YOUR-NAME/YOUR-REPO</code> — connect GitHub on the
+      <a class="link" href="/setup/github">GitHub step</a> and this fills itself in.
+    </p>
+  {% endif %}
+
+  <div class="stat-label" style="margin-top:20px;">Headers</div>
+  <table class="table">
+    <tbody>
+      {% for name, value in headers.items() %}
+        <tr><td style="width:34%;"><code>{{ name }}</code></td><td><code>{{ value }}</code></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="hint">
+    Swap <code>YOUR_TOKEN</code> for the token from step 1. Keep the word <code>Bearer</code>
+    and the space after it.
+  </p>
+
+  <div class="stat-label" style="margin-top:20px;">Request body</div>
+  <div class="copyrow"><pre class="codeblock" id="t-body">{{ body }}</pre>
+    <button class="icon" type="button" data-copy="t-body" title="Copy">⧉</button></div>
+  <p class="hint">
+    <code>mode: due</code> means "do whatever is owed right now" — the same thing the
+    schedule does. If your default branch is not <code>main</code>, change <code>ref</code>.
+  </p>
+
+  <div class="stat-label" style="margin-top:20px;">Times — {{ cfg.timezone }}</div>
+  <div class="chips">
+    {% for t in times %}<span class="chip">{{ t }}</span>{% endfor %}
+  </div>
+  <p class="hint" style="margin-top:10px;">
+    {% if cfg.mode == 'preview' %}
+      Three per posting time: one writes the draft, one publishes it {{ cfg.preview_minutes }}
+      minutes later, one spare in case a request is missed.
+    {% else %}
+      Two per posting time: one posts, one spare in case a request is missed.
+    {% endif %}
+    Every extra request is harmless — a slot that is already done is skipped.
+  </p>
+</section>
+
+<section class="card card-pad rise">
+  <div class="card-head" style="padding:0 0 12px;">
+    <h2 style="font-size:18px;">4 · Prove it works</h2>
+    {% if repo %}
+      <a class="link" href="https://github.com/{{ repo }}/actions" target="_blank" rel="noopener">
+        Watch the Actions tab →</a>
+    {% endif %}
+  </div>
+  <p style="color:var(--muted); font-size:14px; margin:0 0 14px; max-width:64ch;">
+    This sends the same request your scheduling service will send, as a
+    <b>dry run</b> — the model writes a post and the run appears in Actions, but nothing
+    reaches LinkedIn. If this works, the wiring is right, and the only thing left to get
+    wrong is the times.
+  </p>
+  <form method="post" action="/setup/trigger/test">
+    <button class="btn" type="submit" data-busy="Sending…" {{ '' if connected else 'disabled' }}>
+      Send a test run
+    </button>
+  </form>
+  {% if not connected %}
+    <p class="hint" style="margin-top:10px;">
+      Connect GitHub on the <a class="link" href="/setup/github">GitHub step</a> first —
+      this uses the token already stored there, not the one you just made.
+    </p>
+  {% endif %}
+</section>
+
+<script src="/static/js/trigger.js" defer></script>
+{% endblock %}

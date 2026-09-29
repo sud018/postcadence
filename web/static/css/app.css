@@ -210,6 +210,9 @@ select.input { appearance:none; cursor:pointer; }
 .copyrow { display:flex; align-items:center; gap:8px; margin-top:8px; padding:10px 12px;
            background:var(--ink-900); border:1px solid var(--ink-700); border-radius:12px; }
 .copyrow code { flex:1; color:var(--brand-300); font-size:13px; overflow-wrap:anywhere; }
+/* A multi-line payload in the same box as the one-liners above it. */
+.codeblock { flex:1; margin:0; color:var(--brand-300); font-size:13px;
+             font-family:ui-monospace,Consolas,monospace; white-space:pre; overflow-x:auto; }
 .status-ok { padding:16px; border-radius:14px; background:rgba(20,184,166,.08); border:1px solid rgba(20,184,166,.25); }
 .status-big { font-size:22px; font-weight:600; color:var(--teal-400); margin-bottom:6px; }
 

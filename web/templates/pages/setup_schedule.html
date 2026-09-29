@@ -82,7 +82,11 @@
       <div class="chips" style="margin-top:10px;">
         {% for line in cron %}<span class="chip"><code>{{ line }}</code></span>{% endfor %}
       </div>
-      <p style="color:var(--muted); font-size:13px; margin-top:8px;">These show your saved schedule. They refresh after you press Save.</p>
+      <p style="color:var(--muted); font-size:13px; margin-top:8px;">
+        These show your saved schedule. They refresh after you press Save.
+        GitHub treats them as best-effort and has lately been hours late —
+        <a class="link" href="/setup/trigger">make it punctual →</a>
+      </p>
     </div>
     <button class="btn" type="submit">Save schedule</button>
   </div>

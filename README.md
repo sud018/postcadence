@@ -251,9 +251,123 @@ A few decisions worth knowing about:
 | LinkedIn: *401* when posting | the token expired or was revoked | Settings → Reconnect, then Send secrets |
 | LinkedIn: *426 NONEXISTENT_VERSION* | the API version in `agent/linkedin/poster.py` has retired (they last about a year) | bump `LINKEDIN_VERSION` to a recent `YYYYMM` |
 | GitHub: *This OAuth app does not have device flow switched on* | the checkbox was missed | tick **Enable Device Flow** in the OAuth app settings |
-| Actions didn't run at your time | GitHub can start scheduled runs 5–20 minutes late at busy times | expected; `catch_up_hours` covers it |
+| Actions didn't run at your time | GitHub's scheduled runs are best-effort and have lately been hours late | raise `catch_up_hours`, or see [Punctuality](#punctuality-when-github-runs-late) |
 | *Port 8787 is already in use* | another PostCadence window is still open | close it, or see *Changing the port* |
 | Sync badge: *N new runs on GitHub* | GitHub has posted since you last looked | Settings → Pull post history |
+
+---
+
+## Punctuality: when GitHub runs late
+
+GitHub describes scheduled workflows as best-effort, and says plainly they are
+not guaranteed. In practice they are usually a few minutes late; through late
+2026 many repositories have seen them arrive **four to six hours** behind. That
+is long enough for a post to fall outside `catch_up_hours` and be dropped
+entirely.
+
+The delay is not in your repository and not in waiting for a machine — it is
+GitHub deciding when to create the run. Nothing in this project can reach it.
+
+What you *can* do is give the workflow a second way in. All three below run the
+same code, `python -m agent run-due`; they differ only in who says "go". Leave
+GitHub's own schedule switched on whichever you add — a slot that is already
+handled is skipped, so an extra trigger costs nothing but a few seconds of
+runner time.
+
+| Way in | Extra account | Works with your PC off | On time? |
+|---|---|---|---|
+| GitHub's schedule *(already on)* | none | yes | often hours late |
+| Your own computer | none | no | to the second |
+| A scheduling service | one, free | yes | to the minute |
+
+Open **Settings → Make it punctual** (`/setup/trigger`) in the app and it prints
+the exact URL, headers, body and times for your own configuration, with a button
+that sends a test run.
+
+### Option A — your own computer
+
+Nothing to sign up for, and no token leaves your machine. The catch is that the
+computer has to be awake.
+
+**Windows.** Task Scheduler → Create Task → Triggers → New → *Daily*, repeat
+every 30 minutes. Action → Start a program:
+
+```
+Program:   C:\dev\linkedin-agent\.venv\Scripts\python.exe
+Arguments: -m agent run-due
+Start in:  C:\dev\linkedin-agent
+```
+
+**macOS / Linux.** `crontab -e`, then one line per tick:
+
+```
+30,0 9,10 * * *  cd ~/linkedin-agent && .venv/bin/python -m agent run-due
+```
+
+Posts made this way are recorded locally, so press **Push post history** in the
+app afterwards, or GitHub will publish that slot again.
+
+### Option B — a scheduling service
+
+Works with the machine off, at the cost of one free account.
+[cron-job.org](https://cron-job.org) needs only an email address, allows
+arbitrary headers and a request body, and goes down to one-minute resolution.
+Cloudflare Workers cron triggers work too if you already use Cloudflare.
+
+**1. Make a token.** On GitHub → Settings → Developer settings →
+[Fine-grained tokens](https://github.com/settings/personal-access-tokens/new):
+
+- Repository access → **Only select repositories** → this one
+- Permissions → Repository → **Actions: Read and write**
+- Expiration → 90 days
+
+Nothing else. This token is going to sit in somebody else's database, so it
+should be able to do exactly one thing: start this workflow. **Do not use a
+classic token with `repo` scope** — that grants your whole account.
+
+**2. Make the job.** Method `POST`, to:
+
+```
+https://api.github.com/repos/OWNER/REPO/actions/workflows/post.yml/dispatches
+```
+
+Headers:
+
+```
+Accept:                application/vnd.github+json
+Authorization:         Bearer YOUR_TOKEN
+X-GitHub-Api-Version:  2022-11-28
+Content-Type:          application/json
+```
+
+Body:
+
+```json
+{ "ref": "main", "inputs": { "mode": "due", "dry_run": false } }
+```
+
+`mode: due` means "do whatever is owed right now" — the same thing the schedule
+does, so a punctual trigger and a late one behave identically.
+
+**3. Set the times.** Tell the service to use your own timezone, the one in
+`config.json`. It follows daylight saving for you, which is why these are local
+times and the cron inside `post.yml` is not — that file needs a line for each
+UTC offset, this does not.
+
+In preview mode, three ticks per posting time: one writes the draft, one
+publishes it `preview_minutes` later, one spare. For a single 10:00 slot with a
+30-minute window: **09:30, 10:00, 10:30**. The setup page lists yours.
+
+**4. Test it.** Settings → Make it punctual → **Send a test run**. That sends the
+same request as a dry run: the model writes a post and the run appears in your
+Actions tab, but nothing reaches LinkedIn. A success there means the only thing
+left to get wrong is the times.
+
+### What this does not fix
+
+The run still happens on GitHub's runners, so if Actions itself is down, nothing
+runs. It is the *scheduler* this replaces, not the platform. Keeping
+`catch_up_hours` generous is still worthwhile.
 
 ---
 
