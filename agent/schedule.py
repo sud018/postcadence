@@ -37,20 +37,32 @@ def due_slots(cfg: Config, state: State, now: datetime | None = None) -> list[st
     return due
 
 def prepare_slots(cfg: Config, state: State, now: datetime | None = None) -> list[str]:
-    """Slots whose preview should be written now: inside the preview window
-    before the slot, and not already posted or skipped."""
+    """Slots that need a draft written now.
+
+    From `preview_minutes` before the slot until the catch-up window closes -
+    deliberately wide. GitHub regularly starts a scheduled run an hour or more
+    late, and a draft that can only be written inside a 30-minute window is a
+    draft that often never gets written at all.
+
+    Writing the draft late is fine: the review clock starts when the issue is
+    opened, not when the slot was supposed to be. prepare_preview() will not
+    open a second issue if one is already there.
+    """
     if cfg.mode != "preview":
         return []
 
     now = now or local_now(cfg)
     today = now.date().isoformat()
     lead = timedelta(minutes=cfg.preview_minutes)
+    window = timedelta(hours=cfg.catch_up_hours)
 
     ready = []
     for slot in cfg.post_times:
         scheduled = slot_time(now, slot)
-        if not (scheduled - lead <= now < scheduled):
-            continue                      # not inside the preview window
+        if now < scheduled - lead:
+            continue                      # still too early to write it
+        if now - scheduled > window:
+            continue                      # too late to bother; the day is gone
         if state.already_handled(today, slot):
             continue
         ready.append(slot)

@@ -2,7 +2,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from agent.config import Config
-from agent.schedule import cron_lines, due_slots, slot_time
+from agent.schedule import cron_lines, due_slots, prepare_slots, slot_time
 from agent.state import HistoryEntry, State
 
 TZ = ZoneInfo("America/Los_Angeles")
@@ -59,16 +59,38 @@ def test_cron_lines_cover_winter_and_summer_offsets():
     assert lines == ["0 16 * * *", "0 17 * * *"]
 
 
-def test_prepare_window_only_fires_before_the_slot():
+def test_a_draft_is_not_written_before_the_review_window_opens():
     preview_cfg = cfg(mode="preview", preview_minutes=30)
-    from agent.schedule import prepare_slots
     assert prepare_slots(preview_cfg, State(), at(8, 0)) == []
+
+
+def test_a_draft_is_written_inside_the_review_window():
+    preview_cfg = cfg(mode="preview", preview_minutes=30)
     assert prepare_slots(preview_cfg, State(), at(8, 45)) == ["09:00"]
-    assert prepare_slots(preview_cfg, State(), at(9, 5)) == []
+
+
+def test_a_late_run_still_writes_the_draft():
+    """The real failure: GitHub started this run 90 minutes late.
+
+    The old rule only wrote a draft between 08:30 and 09:00, so a late run
+    wrote nothing, and the day passed with no post and no explanation.
+    """
+    preview_cfg = cfg(mode="preview", preview_minutes=30)
+    assert prepare_slots(preview_cfg, State(), at(10, 30)) == ["09:00"]
+
+
+def test_a_draft_is_not_written_once_the_catch_up_window_closes():
+    preview_cfg = cfg(mode="preview", preview_minutes=30, catch_up_hours=6)
+    assert prepare_slots(preview_cfg, State(), at(15, 30)) == []
+
+
+def test_no_draft_for_a_slot_that_is_already_done():
+    preview_cfg = cfg(mode="preview", preview_minutes=30)
+    state = State(history=[posted("09:00")])
+    assert prepare_slots(preview_cfg, state, at(8, 45)) == []
 
 
 def test_auto_mode_never_prepares():
-    from agent.schedule import prepare_slots
     assert prepare_slots(cfg(mode="auto"), State(), at(8, 45)) == []
 
 

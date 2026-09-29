@@ -20,6 +20,8 @@ def _show(result: RunResult, heading: str = "") -> None:
         console.print(f"\n[dim]{len(result.text)} characters[/]")
     if result.post_id:
         console.print(f"[green]Posted.[/] {result.post_id}")
+    if result.status == "waiting":
+        console.print("[yellow]Waiting for your review.[/]")
     if result.status == "dry-run":
         console.print("[yellow]Dry run - nothing was published.[/]")
     if result.reason:

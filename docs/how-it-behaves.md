@@ -44,11 +44,16 @@ Your settings: one post at **09:00**, mode **preview**, `preview_minutes` 30,
 
 | Time | GitHub Actions does |
 |---|---|
-| 08:30 | Writes the post and opens a GitHub **Issue** titled `Draft post for 2026-09-28 09:00` |
-| 08:30 → 09:00 | You may comment `/approve`, `/cancel`, or edit the text in the issue |
-| 09:00 | Publishes it. Your edits are published as edited. `/cancel` skips. No comment at all → falls back to `preview_timeout_action` (yours: post) |
-| 09:00 → 15:00 | Catch-up window: if a run was late or failed, a later run may still publish |
+| from 08:30 | The first run to arrive writes the post and opens a GitHub **Issue** titled `Draft post for 2026-09-28 09:00` |
+| next 30 minutes | You may comment `/approve`, `/cancel`, or edit the text in the issue |
+| after that | The next run publishes it. Your edits are published as edited. `/cancel` skips. No comment at all → falls back to `preview_timeout_action` (yours: post) |
+| until 15:00 | Catch-up window: everything above may happen late and still work |
 | after 15:00 | The slot is abandoned. **Nothing is recorded.** The day simply has no post |
+
+**The review window is measured from the issue, not from the clock.** GitHub
+often starts a scheduled run 80 minutes or more late. A draft written late still
+gets its full `preview_minutes` before anything is published, and the run that
+opens the issue never publishes it in the same breath.
 
 In **auto** mode there is no issue and no 08:30 step: the 09:00 run writes and
 publishes in one go.

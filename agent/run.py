@@ -168,6 +168,15 @@ def decide_preview(cfg: Config, slot: str) -> RunResult:
 
     decision = draft.decision
     if decision == "none":
+        # Nobody has answered yet. Give them the full review window, counted
+        # from when the issue opened - a draft written late still gets its
+        # 30 minutes, instead of being published the second it appears.
+        waited = draft.minutes_open()
+        if waited < cfg.preview_minutes:
+            left = int(cfg.preview_minutes - waited)
+            return RunResult(status="waiting", topic="",
+                             reason=f"draft #{draft.number} has {left} min of review time left")
+
         decision = "approve" if cfg.preview_timeout_action == "post" else "cancel"
 
     pick = pick_topic(load_topics(), state, slot, today)

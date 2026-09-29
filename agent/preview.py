@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 import requests
 
@@ -24,7 +25,20 @@ class PreviewError(RuntimeError):
 class Draft:
     number: int
     text: str
-    decision: str      # approve / cancel / none
+    decision: str          # approve / cancel / none
+    created_at: str = ""   # when the issue was opened, from GitHub (UTC)
+
+    def minutes_open(self, now: datetime | None = None) -> float:
+        """How long you have had to look at it.
+
+        The review window is measured from this, not from the clock, because
+        GitHub can start a scheduled run an hour or more late.
+        """
+        if not self.created_at:
+            return 0.0
+        opened = datetime.fromisoformat(self.created_at.replace("Z", "+00:00"))
+        now = now or datetime.now(timezone.utc)
+        return (now - opened).total_seconds() / 60
 
 
 def _env(name: str) -> str:
@@ -97,7 +111,8 @@ def open_draft(date: str, slot: str, token: str = "", repo: str = "") -> Draft |
         return None
 
     comments = _call("GET", f"/repos/{repo}/issues/{match['number']}/comments?per_page=100", token)
-    return Draft(number=match["number"], text=extract_text(match.get("body", "")), decision=decide(comments))
+    return Draft(number=match["number"], text=extract_text(match.get("body", "")),
+                 decision=decide(comments), created_at=match.get("created_at", ""))
 
 
 def create_draft(date: str, slot: str, topic: str, text: str, timeout_action: str,
