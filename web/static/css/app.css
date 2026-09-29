@@ -318,7 +318,13 @@ select.input { appearance:none; cursor:pointer; }
 .issue-body { flex:1; min-width:0; }
 .issue-title { color:var(--white); font-weight:600; font-size:14px; }
 .issue-detail { color:var(--muted); font-size:13px; margin-top:2px; }
+.issue-actions { flex:none; display:flex; align-items:center; gap:8px; }
+.issue-actions form { margin:0; }
 .btn-sm { padding:7px 14px; font-size:13px; }
+/* Quieter than ghost: the option you take when you have decided to do nothing. */
+.btn-quiet { background:transparent; box-shadow:none; color:var(--muted);
+             border:1px solid var(--ink-700); }
+.btn-quiet:hover { color:var(--text); border-color:var(--muted); background:transparent; }
 
 .conns { display:flex; flex-direction:column; gap:4px; margin-top:12px; }
 .conn { display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid var(--ink-700); }

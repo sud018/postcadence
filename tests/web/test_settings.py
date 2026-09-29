@@ -155,3 +155,70 @@ def test_push_can_return_to_settings_but_nowhere_else():
                        follow_redirects=False)
     assert ok.headers["location"].startswith("/settings")
     assert evil.headers["location"].startswith("/setup/github")
+
+
+# --- writing off a failed slot ----------------------------------------------
+
+def failed_slot(date: str = "2026-09-28", slot: str = "18:30"):
+    from agent.state import HistoryEntry, load_state, save_state
+    state = load_state()
+    state.add(HistoryEntry(date=date, slot=slot, topic="RAG evaluation",
+                           status="failed", error="No draft issue was found."))
+    save_state(state)
+    return state
+
+
+def test_dismissing_closes_the_slot_without_posting():
+    from agent.state import load_state
+    failed_slot()
+
+    response = client.post("/settings/dismiss",
+                           data={"date": "2026-09-28", "slot": "18:30"},
+                           follow_redirects=False)
+
+    assert "done=" in response.headers["location"]
+    state = load_state()
+    assert state.already_handled("2026-09-28", "18:30")
+    assert [h.status for h in state.history if h.date == "2026-09-28"] == ["failed", "skipped"]
+
+
+def test_dismissing_keeps_the_topic_queued():
+    from agent.state import load_state
+    before = load_state().next_topic_index
+    failed_slot("2026-09-27", "09:00")
+
+    client.post("/settings/dismiss", data={"date": "2026-09-27", "slot": "09:00"},
+                follow_redirects=False)
+
+    assert load_state().next_topic_index == before
+
+
+def test_the_warning_is_gone_afterwards():
+    from web import health
+    failed_slot("2026-09-26", "09:00")
+    assert [i for i in health.issues() if "2026-09-26" in i.title]
+
+    client.post("/settings/dismiss", data={"date": "2026-09-26", "slot": "09:00"},
+                follow_redirects=False)
+
+    assert [i for i in health.issues() if "2026-09-26" in i.title] == []
+
+
+def test_a_slot_that_never_failed_cannot_be_dismissed():
+    response = client.post("/settings/dismiss",
+                           data={"date": "2026-01-01", "slot": "09:00"},
+                           follow_redirects=False)
+    assert "error=" in response.headers["location"]
+
+
+def test_dismissing_twice_is_harmless():
+    from agent.state import load_state
+    failed_slot("2026-09-25", "09:00")
+    client.post("/settings/dismiss", data={"date": "2026-09-25", "slot": "09:00"},
+                follow_redirects=False)
+    client.post("/settings/dismiss", data={"date": "2026-09-25", "slot": "09:00"},
+                follow_redirects=False)
+
+    skips = [h for h in load_state().history
+             if h.date == "2026-09-25" and h.status == "skipped"]
+    assert len(skips) == 1

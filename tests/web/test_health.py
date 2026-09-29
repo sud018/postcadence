@@ -121,3 +121,23 @@ def test_a_failure_that_was_followed_by_a_post_is_forgotten(secrets):
     save_state(state)
 
     assert [i for i in health.issues() if "did not post" in i.title] == []
+
+
+# --- writing off a failure you are never going to act on --------------------
+
+def test_a_failed_run_offers_a_way_out(secrets):
+    state = load_state()
+    state.add(HistoryEntry(date="2026-09-28", slot="18:30", topic="t",
+                           status="failed", error="No draft issue was found."))
+    save_state(state)
+
+    [found] = [i for i in health.issues() if "did not post" in i.title]
+    assert found.dismissable
+    assert (found.dismiss_date, found.dismiss_slot) == ("2026-09-28", "18:30")
+
+
+def test_nothing_else_can_be_dismissed(secrets):
+    """A missing key is not a thing you get to wave away."""
+    secrets.discard("OPENAI_API_KEY")
+    save_topics([])
+    assert [i for i in health.issues() if i.dismissable] == []

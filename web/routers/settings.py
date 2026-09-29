@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from agent.config import TONES, ConfigError, is_first_run, load_or_default, save_config
 from agent.llm import KEY_NAMES
 from agent.secrets_store import get_secret
+from agent.state import HistoryEntry, load_state, save_state
 from agent.status import token_days
 from web import health
 from web.app import templates
@@ -80,6 +81,30 @@ def _token_note(days: int | None) -> str:
     if days < 0:
         return "token expired"
     return f"token valid {days} more day{'s' if days != 1 else ''}"
+
+
+@router.post("/dismiss")
+def dismiss(date: str = Form(...), slot: str = Form(...)) -> RedirectResponse:
+    """Write off a slot that failed, without posting anything for it.
+
+    A failure deliberately leaves its slot open so a later run can retry. Once
+    the catch-up window has passed there is no later run, and the warning would
+    sit on the dashboard forever. Recording a `skipped` entry closes the slot
+    the same way the Skip button does: nothing is published, the topic stays
+    where it is, and the history still says what happened.
+    """
+    state = load_state()
+    if state.already_handled(date, slot):
+        return _back(done="That slot was already closed.")
+
+    failed = [h for h in state.history
+              if h.date == date and h.slot == slot and h.status == "failed"]
+    if not failed:
+        return _back(error="There is no failed run for that slot.")
+
+    state.add(HistoryEntry(date=date, slot=slot, topic=failed[-1].topic, status="skipped"))
+    save_state(state)
+    return _back(done=f"{date} {slot} written off. The topic is still queued.")
 
 
 @router.post("/voice")

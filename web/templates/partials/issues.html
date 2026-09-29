@@ -8,7 +8,18 @@
           <div class="issue-title">{{ i.title }}</div>
           {% if not compact %}<div class="issue-detail">{{ i.detail }}</div>{% endif %}
         </div>
-        <a class="btn btn-ghost btn-sm" href="{{ i.href }}">{{ i.action }}</a>
+        <div class="issue-actions">
+          <a class="btn btn-ghost btn-sm" href="{{ i.href }}">{{ i.action }}</a>
+          {% if i.dismissable %}
+            {# Closes the slot without posting. Only ever offered for a failed run. #}
+            <form method="post" action="/settings/dismiss">
+              <input type="hidden" name="date" value="{{ i.dismiss_date }}">
+              <input type="hidden" name="slot" value="{{ i.dismiss_slot }}">
+              <button class="btn btn-quiet btn-sm" type="submit"
+                      title="Close this slot without posting. Nothing is published and the topic stays queued.">Skip it</button>
+            </form>
+          {% endif %}
+        </div>
       </div>
     {% endfor %}
   </div>

@@ -28,6 +28,15 @@ class Issue:
     detail: str
     href: str
     action: str
+    # A slot that failed can be written off instead of acted on. These carry the
+    # date and slot to close; everything else is a problem you have to fix, and
+    # dismissing it would only hide it until the next page load.
+    dismiss_date: str = ""
+    dismiss_slot: str = ""
+
+    @property
+    def dismissable(self) -> bool:
+        return bool(self.dismiss_date and self.dismiss_slot)
 
 
 def _secret(name: str | None) -> bool:
@@ -109,7 +118,8 @@ def check_last_run(cfg: Config) -> Issue | None:
 
     return Issue("warn", f"{last.date} {last.slot} did not post",
                  last.error or "The run failed and nothing was published.",
-                 "/drafts", "Write one now")
+                 "/drafts", "Write one now",
+                 dismiss_date=last.date, dismiss_slot=last.slot)
 
 
 def check_github(cfg: Config) -> Issue | None:
