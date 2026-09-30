@@ -9,7 +9,7 @@
   ],
   "mode": "preview",
   "preview_minutes": 30,
-  "preview_timeout_action": "post",
+  "preview_timeout_action": "skip",
   "catch_up_hours": 6,
   "tone": "professional",
   "author_context": "",
