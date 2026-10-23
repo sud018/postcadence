@@ -468,6 +468,15 @@
       "post_id": "",
       "error": "",
       "created_at": "2026-10-23T05:22:41+00:00"
+    },
+    {
+      "date": "2026-10-23",
+      "slot": "09:00",
+      "topic": "Small language models on-device: what they are good enough for",
+      "status": "skipped",
+      "post_id": "",
+      "error": "",
+      "created_at": "2026-10-23T19:59:47+00:00"
     }
   ]
 }
